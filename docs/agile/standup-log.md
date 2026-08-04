@@ -17,7 +17,24 @@
 
 **Yesterday:** -
 
-**Today:** -
+**Today:**
+- Repo scaffolded with backend (Express generator, port 5000)
+- Repo scaffolded with frontend (React app generator)
+- Frontend connects with backend through vite.config.js
+```js
+proxy: {
+      '/api': 'http://localhost:5000' // Routes local React /api requests directly to Express
+    }
+```
+```js
+// frontend
+fetch('/api/message')
+
+//backend
+app.get('/api/message', (req, res) => {
+  res.json({ message: "Hello from the Express backend meow!" });
+});
+```
 
 **Blockers:** -
 
