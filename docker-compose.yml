@@ -6,6 +6,10 @@ services:
     environment:
       - PORT=3000
       - DB_PATH=/app/data/restaurant.db
+      # Local development only. Generate a real secret for any deployed environment
+      # and supply it from the host, not from this file.
+      - JWT_SECRET=${JWT_SECRET:-dev-only-secret-do-not-use-in-production}
+      - JWT_EXPIRES_IN=8h
     volumes:
       - ./backend:/app
       - /app/node_modules
