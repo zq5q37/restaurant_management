@@ -15,4 +15,6 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npx", "nodemon", "server.js"]
+# -L (legacy watch = polling): file change events don't cross a Windows bind mount,
+# so without this nodemon never sees edits. Same reason vite.config.js sets usePolling.
+CMD ["npx", "nodemon", "-L", "server.js"]

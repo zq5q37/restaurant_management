@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import Login from './Login';
+import Navbar, { NAV_ITEMS } from './Navbar';
+import Profile from './Profile';
 
 const TOKEN_KEY = 'auth_token';
 
@@ -7,11 +9,13 @@ function App() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(Boolean(localStorage.getItem(TOKEN_KEY)));
+  const [page, setPage] = useState('menu');
 
   function handleLogout() {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
+    setPage('menu');
   }
 
   // After a page reload we have a token but no user object, so ask the server who it belongs to.
@@ -35,15 +39,25 @@ function App() {
   if (token && checking) return <p>Loading...</p>;
   if (!user) return <Login onSuccess={handleLogin} />;
 
+  const label = NAV_ITEMS.find((item) => item.key === page)?.label ?? page;
+
   return (
     <div>
-      <h1>Signed in</h1>
-      <ul>
-        <li>Name: {user.full_name}</li>
-        <li>Email: {user.email}</li>
-        <li>Role: {user.role}</li>
-      </ul>
-      <button onClick={handleLogout}>Log out</button>
+      <Navbar user={user} current={page} onNavigate={setPage} onLogout={handleLogout} />
+
+      <main>
+        <h1>{label}</h1>
+        {page === 'profile' ? (
+          <Profile
+            token={token}
+            user={user}
+            onUpdated={setUser}
+            onUnauthorized={handleLogout}
+          />
+        ) : (
+          <p>Nothing here yet.</p>
+        )}
+      </main>
     </div>
   );
 }
