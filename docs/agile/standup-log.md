@@ -47,11 +47,12 @@ app.get('/api/message', (req, res) => {
 **Today:**
 - Dockerise backend: `docker build -t backend ./backend` => `docker run --rm -p 5000:3000 backend` => `http://localhost:5000/api/health`
 - Dockerise frontend: `docker build -t frontend ./frontend` => `docker run --rm -p 5173:5173 frontend` => See React Frontend
-- 
+- Docker compose => `docker compose up --build`
 
 **Blockers:** -
 
-**Challenges & resolutions:** -
+**Challenges & resolutions:**
+- remember to `docker ps` and `docker kill id`
 
 ## Day 4: 2026-08-06
 

@@ -8,6 +8,12 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     watch: { usePolling: true },
+    proxy: {
+      // 'backend' is the compose service name; use localhost when running dev outside Docker
+      '/api': {
+        target: process.env.API_PROXY_TARGET || 'http://backend:3000',
+        changeOrigin: true,
+      },
+    },
   },
 })
-// no proxy first, if Dockerfile in frontend only 

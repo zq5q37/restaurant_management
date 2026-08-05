@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:3000"
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/restaurant.db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - sqlite-data:/app/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  sqlite-data:

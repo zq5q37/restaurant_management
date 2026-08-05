@@ -6,7 +6,7 @@ function App() {
   useEffect(() => {
     fetch('/api/health')
       .then((res) => res.json())
-      .then((data) => setData(data.message))
+      .then((data) => setData(data.ok ? 'Backend OK' : 'Backend not OK'))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
