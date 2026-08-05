@@ -182,6 +182,53 @@ Images are served from `GET /api/images/:filename` **without authentication** �
 unguessable UUIDs, and requiring a bearer token would stop the browser loading them in `<img>`.
 Replacing or deleting an item's image removes the old file from disk.
 
+## Scheduling
+
+All require `Authorization: Bearer <token>`. Weekdays are ISO-8601 (1 = Monday … 7 = Sunday);
+weeks start Monday and any `week_start` is snapped back to its Monday.
+
+| Endpoint | Customer | Staff | Manager | Admin |
+| -------- | :------: | :---: | :-----: | :---: |
+| `GET /api/shifts`, `GET /api/shifts/:id` | own | own | all | all |
+| `POST/PATCH/DELETE /api/shifts[/:id]` | 403 | 403 | ✓ | ✓ |
+| `POST/DELETE /api/shifts/:id/assignments[/:userId]` | 403 | 403 | ✓ | ✓ |
+| `GET/POST/PATCH/DELETE /api/shift-templates[/:id]` | 403 | 403 | ✓ | ✓ |
+| `POST /api/schedule/generate`, `/publish` | 403 | 403 | ✓ | ✓ |
+| `GET /api/schedule/week` | own | own | all | all |
+| `GET /api/schedule/coverage` | 403 | 403 | ✓ | ✓ |
+| `GET/POST /api/availability`, `DELETE /:id` | own | own | any | any |
+| `GET /api/notifications`, `PATCH /:id/read`, `POST /read-all` | own | own | own | own |
+
+Staff results are restricted to shifts they are assigned to — the response carries
+`scope: "own"` or `"all"` so a client knows which it received. It is not a filter staff can
+turn off.
+
+### Generating a week
+
+`POST /api/schedule/generate { week_start }` creates one shift per active template for that week.
+**Idempotent** — re-running adds only what is missing, so a manager can add a template mid-week and
+generate again without duplicating. Returns `shifts_created` and `shifts_skipped`.
+
+### Conflict detection
+
+Assigning a user to a shift overlapping one they already work returns **409** with the offending
+`conflicting_shift_id`. The same check runs when a shift is *moved*, since editing times can push an
+existing assignee into a clash. Overlap is tested on absolute timestamps, so a 17:00–01:00 shift and
+a 22:00–02:00 shift on the same evening are correctly detected as overlapping.
+
+Also rejected: assigning the same person twice (409), a deactivated user (409), or a customer (409).
+
+### Coverage
+
+`GET /api/schedule/coverage?week_start=` returns `total_shifts`, `covered_shifts`,
+`uncovered_shifts`, `staff_needed`, and a `gaps` array where each entry carries `missing`.
+
+### Notifications (simulated)
+
+Rows are written on assignment, unassignment, shift edits, shift deletion, and
+`POST /api/schedule/publish`. No email or push is sent — recipients read them from
+`GET /api/notifications`, which also returns an `unread` count.
+
 ## Middleware
 
 From `backend/middleware/auth.js`:

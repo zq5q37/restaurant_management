@@ -106,6 +106,48 @@ Indexes on `category_id` and `is_available`.
 The API returns this as `effective_price_cents` alongside `price_cents`, plus an `is_on_special`
 boolean, so the frontend never re-implements the rule.
 
+## Scheduling
+
+Weekdays are ISO-8601 throughout: **1 = Monday … 7 = Sunday**, and weeks start Monday. Times of
+day are `'HH:MM'` (24-hour, zero-padded) so string comparison is chronological.
+
+### `shift_templates`
+
+A recurring weekly slot — "every Friday 17:00–01:00, three servers". Concrete shifts are generated
+from these a week at a time. `UNIQUE (day_of_week, start_time, end_time, role)`.
+
+### `shifts`
+
+| Column | Notes |
+| ------ | ----- |
+| `template_id` | FK → `shift_templates`, **ON DELETE SET NULL** — deleting a rule keeps the history |
+| `shift_date` | The business day, for weekly grouping |
+| `starts_at` / `ends_at` | Absolute `'YYYY-MM-DD HH:MM:SS'` timestamps |
+| `role` | server / host / cleaner / cook / bartender |
+| `required_staff` | Drives coverage; default 1 |
+
+`CHECK (ends_at > starts_at)` and `UNIQUE (template_id, shift_date)`.
+
+### `shift_assignments`, `staff_availability`, `notifications`
+
+`shift_assignments` links users to shifts, `UNIQUE (shift_id, user_id)`, cascading on delete.
+`staff_availability` is a recurring weekly window per user. `notifications` holds the simulated
+schedule-change messages.
+
+### Design decisions
+
+- **Absolute timestamps, not a date plus two clock times.** A closing shift of 22:00–02:00 is a
+  single unambiguous interval, so overlap testing is `a.starts_at < b.ends_at AND b.starts_at <
+  a.ends_at` with no special case for crossing midnight. Storing two times would make that
+  comparison wrong exactly on the shifts most likely to be double-booked.
+- **`ON DELETE SET NULL` from shifts to templates.** Removing a recurring rule should not erase
+  the weeks already worked; the shift survives, only its link to the rule is dropped.
+- **`UNIQUE (template_id, shift_date)` makes generation idempotent.** SQLite treats NULLs as
+  distinct, so this constrains generated shifts without restricting manually created ones.
+- **All date maths is UTC.** `new Date('2026-08-10')` is timezone-dependent and can land a day
+  early west of Greenwich, which would shift a whole generated week; the helpers append
+  `'T00:00:00Z'` to pin it.
+
 ## Image storage
 
 Uploaded images live in the `menu-images` named volume at `/app/uploads` (`UPLOAD_DIR`), so they

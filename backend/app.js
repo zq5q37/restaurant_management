@@ -13,6 +13,11 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/menu-items', require('./routes/menuItems'));
+app.use('/api/shift-templates', require('./routes/shiftTemplates'));
+app.use('/api/shifts', require('./routes/shifts'));
+app.use('/api/schedule', require('./routes/schedule'));
+app.use('/api/availability', require('./routes/availability'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Uploaded images are served unauthenticated: filenames are random UUIDs, so they are not
 // enumerable, and requiring a bearer token would stop the browser from loading them in <img>.

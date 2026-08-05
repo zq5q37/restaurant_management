@@ -93,9 +93,42 @@ const seedMenu = db.transaction(() => {
 
 const menu = seedMenu();
 
+// --- Scheduling ------------------------------------------------------------
+
+// [day_of_week (1=Mon..7=Sun), start, end, role, required_staff]
+// The Friday and Saturday closing shifts run past midnight on purpose — they exercise the
+// overnight handling in shiftBounds().
+const SEED_TEMPLATES = [
+  [1, '09:00', '17:00', 'server', 2],
+  [1, '09:00', '17:00', 'cook', 1],
+  [3, '11:00', '19:00', 'server', 2],
+  [3, '11:00', '19:00', 'host', 1],
+  [5, '17:00', '01:00', 'server', 3],
+  [5, '17:00', '01:00', 'bartender', 1],
+  [6, '17:00', '01:00', 'server', 3],
+  [6, '22:00', '02:00', 'cleaner', 1],
+];
+
+const insertTemplate = db.prepare(`
+  INSERT INTO shift_templates (day_of_week, start_time, end_time, role, required_staff)
+  VALUES (?, ?, ?, ?, ?)
+  ON CONFLICT (day_of_week, start_time, end_time, role) DO NOTHING
+`);
+
+const seedTemplates = db.transaction(() => {
+  let created = 0;
+  for (const template of SEED_TEMPLATES) {
+    if (insertTemplate.run(...template).changes > 0) created++;
+  }
+  return created;
+});
+
+const templates = seedTemplates();
+
 console.log(`Database: ${DB_PATH}`);
 console.log(`Seeded ${created} new user(s); ${SEED_USERS.length - created} already existed.`);
 console.log(`Seeded ${menu.categories} new categor(ies) and ${menu.items} new menu item(s).`);
+console.log(`Seeded ${templates} new shift template(s).`);
 console.table(db.prepare('SELECT id, email, role, is_active FROM users ORDER BY id').all());
 console.table(
   db.prepare(`
