@@ -7,6 +7,25 @@ off) and `journal_mode = WAL`.
 Database file location comes from `DB_PATH`, set to `/app/data/restaurant.db` in `docker-compose.yml`
 and backed by the `sqlite-data` named volume so it survives `docker compose down`.
 
+## Persistence
+
+The database lives in the named volume `sqlite-data`, mounted at `/app/data`. Note that the
+`./backend:/app` bind mount is shadowed at that path by the named volume, so the `.db` file is in
+Docker-managed storage, **not** in `backend/data/` on the host.
+
+| Command                  | Containers | Data     |
+| ------------------------ | ---------- | -------- |
+| `docker compose down`    | removed    | **kept** |
+| `docker compose down -v` | removed    | **wiped** |
+
+`server.js` calls `migrate()` before listening, so a fresh or wiped volume gets its schema
+automatically on boot — the server never serves requests against a missing table. Seed data is
+*not* automatic; after a `down -v` you must re-run `docker compose exec backend npm run seed`.
+
+One more volume to know about: `/app/node_modules` is an **anonymous** volume, populated only when
+first created. After changing dependencies or fixing a broken install, rebuilding the image is not
+enough — use `docker compose up -d --force-recreate --renew-anon-volumes backend`.
+
 ## `users`
 
 Every person who can log in, across all four roles. See [permission-matrix.md](permission-matrix.md)

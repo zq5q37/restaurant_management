@@ -54,6 +54,8 @@ app.get('/api/message', (req, res) => {
   - role stored as TEXT + CHECK, not a roles table — 4 roles are fixed by app logic, no join needed
   - seed is idempotent via `ON CONFLICT (email) DO NOTHING`, safe to re-run over the persisted volume
   - filled in `docs/database-schema.md`
+- SQLite volume: `sqlite-data:/app/data` => survives `down && up`, wiped by `down -v` (verified with a probe row)
+- `migrate()` on boot in `server.js` => schema auto-created on fresh volume; seeding stays manual
 
 **Blockers:** -
 
