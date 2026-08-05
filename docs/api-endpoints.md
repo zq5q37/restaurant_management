@@ -114,6 +114,74 @@ bcrypt-hashed before storage. `password_hash` is never included in any response.
 An admin cannot demote, deactivate, or delete **their own** account (409). Without this, the last
 admin could remove the system's only means of administering it.
 
+## Menu
+
+All require `Authorization: Bearer <token>`. Write access is manager+ throughout, per the Menu
+section of [permission-matrix.md](permission-matrix.md).
+
+| Endpoint                                  | Customer | Staff | Manager | Admin |
+| ----------------------------------------- | :------: | :---: | :-----: | :---: |
+| `GET /api/categories`                     |    ✓     |   ✓   |    ✓    |   ✓   |
+| `POST/PATCH/DELETE /api/categories[/:id]` |   403    |  403  |    ✓    |   ✓   |
+| `GET /api/menu-items`                     |  ✓ (1)   |   ✓   |    ✓    |   ✓   |
+| `POST/PATCH/DELETE /api/menu-items[/:id]` |   403    |  403  |    ✓    |   ✓   |
+| `PATCH /api/menu-items/:id/availability`  |   403    |  403  |    ✓    |   ✓   |
+| `PATCH /api/menu-items/:id/pricing`       |   403    |  403  |    ✓    |   ✓   |
+| `POST/DELETE /api/menu-items/:id/image`   |   403    |  403  |    ✓    |   ✓   |
+
+(1) Customers see **only available items**. This is enforced in the query, not as a default the
+client can override — `?available=false` from a customer still returns available items only, and
+`GET /api/menu-items/:id` for an unavailable item returns 404 rather than 200.
+
+### Search and filtering
+
+`GET /api/menu-items?q=&category_id=&available=&sort=&limit=&offset=`
+
+| Param         | Values                          | Notes                                        |
+| ------------- | ------------------------------- | -------------------------------------------- |
+| `q`           | free text                       | Matches name or description; `%` and `_` are escaped so they match literally |
+| `category_id` | integer                         | 400 if not an integer                        |
+| `available`   | `true` / `false`                | Ignored for customers                        |
+| `sort`        | `name`, `price`, `newest`       | Default: category display order, then name   |
+| `limit`       | 1..200                          | Default 100                                  |
+| `offset`      | integer                         | Default 0                                    |
+
+Response: `{ items, total, limit, offset }`. Each item carries `price_cents`,
+`effective_price_cents`, `is_on_special` and `category_name`.
+
+### Pricing
+
+`PATCH /api/menu-items/:id/pricing` accepts any of `price_cents`, `special_price_cents`,
+`discount_percent`, `special_starts_at`, `special_ends_at`. Send `null` to clear a field.
+
+Validation runs against the row **as it will be after the patch**, not just the fields sent — so
+adding a `discount_percent` to an item that already has a `special_price_cents` is rejected, even
+though the request itself only contains one of them.
+
+| Status | When                                                                |
+| ------ | ------------------------------------------------------------------- |
+| 400    | Non-integer price, `discount_percent` outside 1–99, both special and discount set, special above base price, end before start |
+
+### Image upload
+
+`POST /api/menu-items/:id/image` — `multipart/form-data`, field name `image`.
+
+| Status | When                                                    |
+| ------ | -------------------------------------------------------- |
+| 413    | Larger than 2 MB                                         |
+| 415    | Declared Content-Type not JPEG/PNG/WebP                  |
+| 415    | **File content** is not actually a JPEG/PNG/WebP         |
+| 400    | No file in the `image` field                             |
+
+Two separate checks, because `Content-Type` comes from the client and is trivially spoofed. A shell
+script sent as `image/png` passes the first check and is caught by the second, which reads the
+file's magic bytes and deletes it. Stored filenames are random UUIDs, so a crafted filename cannot
+traverse directories or overwrite an existing file.
+
+Images are served from `GET /api/images/:filename` **without authentication** — filenames are
+unguessable UUIDs, and requiring a bearer token would stop the browser loading them in `<img>`.
+Replacing or deleting an item's image removes the old file from disk.
+
 ## Middleware
 
 From `backend/middleware/auth.js`:

@@ -1,0 +1,22 @@
+/*
+ * Base only. Deliberately not a redesign of the login, navbar or profile pages — those stay
+ * as plain elements. This is the minimum needed for the menu grid to lay out sensibly.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #fafafa;
+}
+
+img {
+  max-width: 100%;
+}

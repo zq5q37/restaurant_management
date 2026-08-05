@@ -1,0 +1,219 @@
+.menu-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.menu-filters input[type='search'] {
+  /* Grows to fill a narrow row but is capped, so the selects stay on screen on wide displays. */
+  flex: 1 1 14rem;
+  max-width: 24rem;
+  min-width: 0;
+}
+
+.menu-filters input,
+.menu-filters select,
+.menu-filters button {
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.menu-status {
+  margin: 0 0 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.menu-error {
+  color: #b00020;
+}
+
+/*
+ * auto-fill + minmax is the whole responsive story: the browser fits as many 15rem columns as
+ * will fit and reflows to fewer on narrow screens. No media queries, no breakpoints to maintain.
+ */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+}
+
+.menu-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.menu-card--unavailable {
+  opacity: 0.6;
+}
+
+.menu-card__image {
+  width: 100%;
+  aspect-ratio: 4 / 3; /* reserves space before the image loads, so cards don't jump */
+  object-fit: cover;
+  display: block;
+}
+
+.menu-card__image--empty {
+  background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px);
+}
+
+.menu-card__body {
+  padding: 0.75rem;
+}
+
+.menu-card__body h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.menu-card__description {
+  margin: 0 0 0.5rem;
+  color: #555;
+  font-size: 0.875rem;
+}
+
+.menu-card__price {
+  margin: 0;
+}
+
+.menu-card__price s {
+  color: #888;
+}
+
+.menu-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.menu-badge--special {
+  background: #0a6b3d;
+  color: #fff;
+}
+
+.menu-badge--unavailable {
+  background: #eee;
+  color: #555;
+  margin-top: 0.5rem;
+}
+
+.menu-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.menu-card__actions button {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.editor {
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #fff;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.editor__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.editor__section {
+  border-top: 1px solid #eee;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  /* Single column keeps labels above inputs, which stays readable at any width. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  max-width: 32rem;
+}
+
+.editor__section h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.editor__section input,
+.editor__section select,
+.editor__section textarea {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.editor__section button {
+  font: inherit;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #888;
+  border-radius: 4px;
+  background: #f4f4f4;
+  cursor: pointer;
+}
+
+.editor__modes {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.editor__modes label {
+  display: block;
+}
+
+.editor__modes input {
+  width: auto;
+}
+
+.editor__hint {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.editor__thumb {
+  width: 8rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}

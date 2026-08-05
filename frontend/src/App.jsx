@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Login from './Login';
 import Navbar, { NAV_ITEMS } from './Navbar';
 import Profile from './Profile';
+import Menu from './Menu';
 
 const TOKEN_KEY = 'auth_token';
 
@@ -47,16 +48,18 @@ function App() {
 
       <main>
         <h1>{label}</h1>
-        {page === 'profile' ? (
+        {page === 'menu' && (
+          <Menu token={token} user={user} onUnauthorized={handleLogout} />
+        )}
+        {page === 'profile' && (
           <Profile
             token={token}
             user={user}
             onUpdated={setUser}
             onUnauthorized={handleLogout}
           />
-        ) : (
-          <p>Nothing here yet.</p>
         )}
+        {page !== 'menu' && page !== 'profile' && <p>Nothing here yet.</p>}
       </main>
     </div>
   );
