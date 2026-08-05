@@ -1,4 +1,5 @@
-FROM node:20-slim
+# better-sqlite3 v13 requires Node >= 22; on Node 20 it compiles but segfaults on first query.
+FROM node:22-slim
 
 WORKDIR /app
 

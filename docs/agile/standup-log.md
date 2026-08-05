@@ -48,11 +48,19 @@ app.get('/api/message', (req, res) => {
 - Dockerise backend: `docker build -t backend ./backend` => `docker run --rm -p 5000:3000 backend` => `http://localhost:5000/api/health`
 - Dockerise frontend: `docker build -t frontend ./frontend` => `docker run --rm -p 5173:5173 frontend` => See React Frontend
 - Docker compose => `docker compose up --build`
+- `users` table + seed one user per role (customer / staff / manager / admin)
+  - `backend/db/schema.sql`, `backend/db/index.js`, `backend/db/seed.js`
+  - `docker compose exec backend npm run seed` (must run in container, `better-sqlite3` is compiled for Linux)
+  - role stored as TEXT + CHECK, not a roles table — 4 roles are fixed by app logic, no join needed
+  - seed is idempotent via `ON CONFLICT (email) DO NOTHING`, safe to re-run over the persisted volume
+  - filled in `docs/database-schema.md`
 
 **Blockers:** -
 
 **Challenges & resolutions:**
 - remember to `docker ps` and `docker kill id`
+- proxy was at the top level of `vite.config.js` instead of inside `server` => Vite silently ignored it,
+- target must be `http://backend:3000` (compose service name), not `localhost` — inside thefrontend container `localhost` is the frontend itself.
 
 ## Day 4: 2026-08-06
 
