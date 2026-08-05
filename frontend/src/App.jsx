@@ -4,7 +4,7 @@ function App() {
   const [data, setData] = useState('');
 
   useEffect(() => {
-    fetch('/api/message')
+    fetch('/api/health')
       .then((res) => res.json())
       .then((data) => setData(data.message))
       .catch((err) => console.error("Error fetching data:", err));

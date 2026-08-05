@@ -46,7 +46,8 @@ app.get('/api/message', (req, res) => {
 
 **Today:**
 - Dockerise backend: `docker build -t backend ./backend` => `docker run --rm -p 5000:3000 backend` => `http://localhost:5000/api/health`
-- Dockerise frontend
+- Dockerise frontend: `docker build -t frontend ./frontend` => `docker run --rm -p 5173:5173 frontend` => See React Frontend
+- 
 
 **Blockers:** -
 
