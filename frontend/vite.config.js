@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/api': 'http://localhost:5000' // Routes local React /api requests directly to Express
+      '/api': 'http://localhost:3000' // Routes local React /api requests directly to Express
     }
   }
 })

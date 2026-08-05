@@ -18,12 +18,12 @@
 **Yesterday:** -
 
 **Today:**
-- Repo scaffolded with backend (Express generator, port 5000)
+- Repo scaffolded with backend (Express generator, port 3000)
 - Repo scaffolded with frontend (React app generator)
 - Frontend connects with backend through vite.config.js
 ```js
 proxy: {
-      '/api': 'http://localhost:5000' // Routes local React /api requests directly to Express
+      '/api': 'http://localhost:3000' // Routes local React /api requests directly to Express
     }
 ```
 ```js
@@ -44,7 +44,9 @@ app.get('/api/message', (req, res) => {
 
 **Yesterday:** -
 
-**Today:** -
+**Today:**
+- Dockerise backend: `docker build -t backend ./backend` => `docker run --rm -p 5000:3000 backend` => `http://localhost:5000/api/health`
+- Dockerise frontend
 
 **Blockers:** -
 
