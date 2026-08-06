@@ -13,9 +13,9 @@ The database lives in the named volume `sqlite-data`, mounted at `/app/data`. No
 `./backend:/app` bind mount is shadowed at that path by the named volume, so the `.db` file is in
 Docker-managed storage, **not** in `backend/data/` on the host.
 
-| Command                  | Containers | Data     |
-| ------------------------ | ---------- | -------- |
-| `docker compose down`    | removed    | **kept** |
+| Command                  | Containers | Data      |
+| ------------------------ | ---------- | --------- |
+| `docker compose down`    | removed    | **kept**  |
 | `docker compose down -v` | removed    | **wiped** |
 
 `server.js` calls `migrate()` before listening, so a fresh or wiped volume gets its schema
@@ -31,16 +31,16 @@ enough — use `docker compose up -d --force-recreate --renew-anon-volumes backe
 Every person who can log in, across all four roles. See [permission-matrix.md](permission-matrix.md)
 for what each role may do.
 
-| Column          | Type    | Constraints                                        | Notes                                     |
-| --------------- | ------- | -------------------------------------------------- | ----------------------------------------- |
-| `id`            | INTEGER | PRIMARY KEY AUTOINCREMENT                           |                                           |
-| `email`         | TEXT    | NOT NULL, UNIQUE                                    | Login identifier; UNIQUE implies an index |
-| `password_hash` | TEXT    | NOT NULL                                            | bcrypt, cost 10 — never plaintext         |
-| `full_name`     | TEXT    | NOT NULL                                            | Display name                              |
-| `role`          | TEXT    | NOT NULL, CHECK in (customer/staff/manager/admin)   | Stored lowercase                          |
-| `is_active`     | INTEGER | NOT NULL, DEFAULT 1, CHECK in (0,1)                 | Soft-delete flag; SQLite has no boolean   |
-| `created_at`    | TEXT    | NOT NULL, DEFAULT `datetime('now')`                 | ISO-8601 UTC                              |
-| `updated_at`    | TEXT    | NOT NULL, DEFAULT `datetime('now')`                 | ISO-8601 UTC                              |
+| Column          | Type    | Constraints                                       | Notes                                     |
+| --------------- | ------- | ------------------------------------------------- | ----------------------------------------- |
+| `id`            | INTEGER | PRIMARY KEY AUTOINCREMENT                         |                                           |
+| `email`         | TEXT    | NOT NULL, UNIQUE                                  | Login identifier; UNIQUE implies an index |
+| `password_hash` | TEXT    | NOT NULL                                          | bcrypt, cost 10 — never plaintext         |
+| `full_name`     | TEXT    | NOT NULL                                          | Display name                              |
+| `role`          | TEXT    | NOT NULL, CHECK in (customer/staff/manager/admin) | Stored lowercase                          |
+| `is_active`     | INTEGER | NOT NULL, DEFAULT 1, CHECK in (0,1)               | Soft-delete flag; SQLite has no boolean   |
+| `created_at`    | TEXT    | NOT NULL, DEFAULT `datetime('now')`               | ISO-8601 UTC                              |
+| `updated_at`    | TEXT    | NOT NULL, DEFAULT `datetime('now')`               | ISO-8601 UTC                              |
 
 Index: `idx_users_role` on `role`, for admin screens that filter by role.
 
@@ -55,30 +55,30 @@ Index: `idx_users_role` on `role`, for admin screens that filter by role.
 
 ## `categories`
 
-| Column          | Type    | Constraints               | Notes                        |
-| --------------- | ------- | ------------------------- | ---------------------------- |
-| `id`            | INTEGER | PRIMARY KEY AUTOINCREMENT |                              |
-| `name`          | TEXT    | NOT NULL, UNIQUE          | Appetizers, Mains, ...       |
-| `description`   | TEXT    |                           |                              |
-| `display_order` | INTEGER | NOT NULL, DEFAULT 0       | Menu ordering                |
-| `created_at` / `updated_at` | TEXT | NOT NULL       | ISO-8601 UTC                 |
+| Column                      | Type    | Constraints               | Notes                  |
+| --------------------------- | ------- | ------------------------- | ---------------------- |
+| `id`                        | INTEGER | PRIMARY KEY AUTOINCREMENT |                        |
+| `name`                      | TEXT    | NOT NULL, UNIQUE          | Appetizers, Mains, ... |
+| `description`               | TEXT    |                           |                        |
+| `display_order`             | INTEGER | NOT NULL, DEFAULT 0       | Menu ordering          |
+| `created_at` / `updated_at` | TEXT    | NOT NULL                  | ISO-8601 UTC           |
 
 ## `menu_items`
 
-| Column                | Type    | Constraints                                  | Notes                                   |
-| --------------------- | ------- | -------------------------------------------- | --------------------------------------- |
-| `id`                  | INTEGER | PRIMARY KEY AUTOINCREMENT                    |                                         |
-| `category_id`         | INTEGER | NOT NULL, FK → `categories(id)` ON DELETE RESTRICT | Cannot orphan an item            |
-| `name`                | TEXT    | NOT NULL, UNIQUE per category                |                                         |
-| `description`         | TEXT    |                                              |                                         |
-| `price_cents`         | INTEGER | NOT NULL, >= 0                               | **Whole cents, never dollars**          |
-| `special_price_cents` | INTEGER | >= 0, nullable                               | Flat override                           |
-| `discount_percent`    | INTEGER | 1..99, nullable                              | Percentage off                          |
-| `special_starts_at`   | TEXT    | nullable                                     | Optional window start                   |
-| `special_ends_at`     | TEXT    | nullable                                     | Optional window end                     |
-| `image_path`          | TEXT    | nullable                                     | Filename only, served from `/api/images`|
-| `is_available`        | INTEGER | NOT NULL, DEFAULT 1, CHECK in (0,1)          |                                         |
-| `created_at` / `updated_at` | TEXT | NOT NULL                              |                                         |
+| Column                      | Type    | Constraints                                        | Notes                                    |
+| --------------------------- | ------- | -------------------------------------------------- | ---------------------------------------- |
+| `id`                        | INTEGER | PRIMARY KEY AUTOINCREMENT                          |                                          |
+| `category_id`               | INTEGER | NOT NULL, FK → `categories(id)` ON DELETE RESTRICT | Cannot orphan an item                    |
+| `name`                      | TEXT    | NOT NULL, UNIQUE per category                      |                                          |
+| `description`               | TEXT    |                                                    |                                          |
+| `price_cents`               | INTEGER | NOT NULL, >= 0                                     | **Whole cents, never dollars**           |
+| `special_price_cents`       | INTEGER | >= 0, nullable                                     | Flat override                            |
+| `discount_percent`          | INTEGER | 1..99, nullable                                    | Percentage off                           |
+| `special_starts_at`         | TEXT    | nullable                                           | Optional window start                    |
+| `special_ends_at`           | TEXT    | nullable                                           | Optional window end                      |
+| `image_path`                | TEXT    | nullable                                           | Filename only, served from `/api/images` |
+| `is_available`              | INTEGER | NOT NULL, DEFAULT 1, CHECK in (0,1)                |                                          |
+| `created_at` / `updated_at` | TEXT    | NOT NULL                                           |                                          |
 
 Indexes on `category_id` and `is_available`.
 
@@ -118,13 +118,13 @@ from these a week at a time. `UNIQUE (day_of_week, start_time, end_time, role)`.
 
 ### `shifts`
 
-| Column | Notes |
-| ------ | ----- |
-| `template_id` | FK → `shift_templates`, **ON DELETE SET NULL** — deleting a rule keeps the history |
-| `shift_date` | The business day, for weekly grouping |
-| `starts_at` / `ends_at` | Absolute `'YYYY-MM-DD HH:MM:SS'` timestamps |
-| `role` | server / host / cleaner / cook / bartender |
-| `required_staff` | Drives coverage; default 1 |
+| Column                  | Notes                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `template_id`           | FK → `shift_templates`, **ON DELETE SET NULL** — deleting a rule keeps the history |
+| `shift_date`            | The business day, for weekly grouping                                              |
+| `starts_at` / `ends_at` | Absolute `'YYYY-MM-DD HH:MM:SS'` timestamps                                        |
+| `role`                  | server / host / cleaner / cook                                                     |
+| `required_staff`        | Drives coverage; default 1                                                         |
 
 `CHECK (ends_at > starts_at)` and `UNIQUE (template_id, shift_date)`.
 

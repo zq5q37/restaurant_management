@@ -8,9 +8,9 @@ const BCRYPT_ROUNDS = 10;
 
 const SEED_USERS = [
   { email: 'customer@example.com', full_name: 'Casey Customer', role: 'customer' },
-  { email: 'staff@example.com',    full_name: 'Sam Staff',      role: 'staff'    },
-  { email: 'manager@example.com',  full_name: 'Morgan Manager', role: 'manager'  },
-  { email: 'admin@example.com',    full_name: 'Alex Admin',     role: 'admin'    },
+  { email: 'staff@example.com', full_name: 'Sam Staff', role: 'staff' },
+  { email: 'manager@example.com', full_name: 'Morgan Manager', role: 'manager' },
+  { email: 'admin@example.com', full_name: 'Alex Admin', role: 'admin' },
 ];
 
 migrate();
@@ -104,7 +104,6 @@ const SEED_TEMPLATES = [
   [3, '11:00', '19:00', 'server', 2],
   [3, '11:00', '19:00', 'host', 1],
   [5, '17:00', '01:00', 'server', 3],
-  [5, '17:00', '01:00', 'bartender', 1],
   [6, '17:00', '01:00', 'server', 3],
   [6, '22:00', '02:00', 'cleaner', 1],
 ];

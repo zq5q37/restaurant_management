@@ -1,6 +1,6 @@
 const { db } = require('../db');
 
-const SHIFT_ROLES = ['server', 'host', 'cleaner', 'cook', 'bartender'];
+const SHIFT_ROLES = ['server', 'host', 'cleaner', 'cook'];
 
 /**
  * Any shift this user is already on that overlaps [starts_at, ends_at).
