@@ -3,8 +3,13 @@ import Login from './Login';
 import Navbar, { NAV_ITEMS } from './Navbar';
 import Profile from './Profile';
 import Menu from './Menu';
+import Schedule from './Schedule';
 
 const TOKEN_KEY = 'auth_token';
+
+// Nav links exist for pages that are still to be built, so the fallback below needs to know
+// which ones actually render something.
+const IMPLEMENTED_PAGES = ['menu', 'schedule', 'profile'];
 
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
@@ -51,6 +56,9 @@ function App() {
         {page === 'menu' && (
           <Menu token={token} user={user} onUnauthorized={handleLogout} />
         )}
+        {page === 'schedule' && (
+          <Schedule token={token} user={user} onUnauthorized={handleLogout} />
+        )}
         {page === 'profile' && (
           <Profile
             token={token}
@@ -59,7 +67,7 @@ function App() {
             onUnauthorized={handleLogout}
           />
         )}
-        {page !== 'menu' && page !== 'profile' && <p>Nothing here yet.</p>}
+        {!IMPLEMENTED_PAGES.includes(page) && <p>Nothing here yet.</p>}
       </main>
     </div>
   );

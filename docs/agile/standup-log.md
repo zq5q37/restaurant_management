@@ -48,6 +48,7 @@ app.get('/api/message', (req, res) => {
 - Dockerise backend: `docker build -t backend ./backend` => `docker run --rm -p 5000:3000 backend` => `http://localhost:5000/api/health`
 - Dockerise frontend: `docker build -t frontend ./frontend` => `docker run --rm -p 5173:5173 frontend` => See React Frontend
 - Docker compose => `docker compose up --build`
+- after build: `docker compose up`
 - `users` table + seed one user per role (customer / staff / manager / admin)
   - `backend/db/schema.sql`, `backend/db/index.js`, `backend/db/seed.js`
   - `docker compose exec backend npm run seed` (must run in container, `better-sqlite3` is compiled for Linux)
@@ -68,11 +69,22 @@ app.get('/api/message', (req, res) => {
 
 **Yesterday:** -
 
-**Today:** -
+**Today:**
+- Dropped `bartender` — `SHIFT_ROLES` is now server / host / cleaner / cook
+- Schedule frontend (`Schedule.jsx`, `dates.js`, `schedule.css`): one week at a time, Week view (7 day cards) or Day view, day strip as picker, prev / next / today nav
+  - one `GET /api/schedule/week` feeds both views — the day view is a filter, not a second request
+  - date maths in UTC, mirroring `backend/schedule/dates.js`; overnight shifts marked `(+1)`
+  - staff see their own shifts only (`scope: "own"`); coverage bar + staffing badges are manager+
+- Manager/admin controls (`ShiftEditor.jsx`): create / edit / delete shift, assign / unassign staff, generate week from templates, publish week
+  - assignment picker hides customers, deactivated users, and anyone already on the shift — all three are 409s from the API
+  - overlap conflict shown with the clashing shift named
 
 **Blockers:** -
 
-**Challenges & resolutions:** -
+**Challenges & resolutions:**
+- `schedule.js` helper collided with `Schedule.jsx` on the case-insensitive Windows FS — `import from './Schedule'` resolved to the helper => renamed to `dates.js`
+- `multer` was missing from `backend/package-lock.json` => `npm start` on the host crashed; `npm install` restored it. The Dockerfile runs `npm install`, not `npm ci`, so the image had been hiding it
+- a leftover Docker port-forward held `localhost:5173` on IPv6 => host dev server only reachable on `127.0.0.1:5173`; `docker compose down` before running Vite outside Docker
 
 ## Day 5: 2026-08-07
 
