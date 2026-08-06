@@ -4,12 +4,13 @@ import Navbar, { NAV_ITEMS } from './Navbar';
 import Profile from './Profile';
 import Menu from './Menu';
 import Schedule from './Schedule';
+import Users from './Users';
 
 const TOKEN_KEY = 'auth_token';
 
 // Nav links exist for pages that are still to be built, so the fallback below needs to know
 // which ones actually render something.
-const IMPLEMENTED_PAGES = ['menu', 'schedule', 'profile'];
+const IMPLEMENTED_PAGES = ['menu', 'schedule', 'users', 'profile'];
 
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
@@ -58,6 +59,9 @@ function App() {
         )}
         {page === 'schedule' && (
           <Schedule token={token} user={user} onUnauthorized={handleLogout} />
+        )}
+        {page === 'users' && (
+          <Users token={token} user={user} onUnauthorized={handleLogout} />
         )}
         {page === 'profile' && (
           <Profile

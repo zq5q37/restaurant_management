@@ -1,0 +1,121 @@
+.users-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.users-filters input[type='search'] {
+  flex: 1 1 14rem;
+  max-width: 24rem;
+  min-width: 0;
+}
+
+.users-filters input,
+.users-filters select,
+.users-filters button {
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.users-status {
+  margin: 0 0 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.users-error {
+  color: #b00020;
+}
+
+.users-notice {
+  margin: 0 0 1rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 4px solid #0a6b3d;
+  background: #f4faf6;
+  font-size: 0.9rem;
+}
+
+.users-hint {
+  margin: 0 0 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* The table has a floor width, so on a narrow screen it scrolls here rather than
+   squeezing the email column into one character per line. */
+.users-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.users-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 40rem;
+  background: #fff;
+}
+
+.users-table th,
+.users-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.users-table thead th {
+  border-bottom: 1px solid #ccc;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #555;
+}
+
+.users-table tr.is-inactive td {
+  color: #999;
+}
+
+.users-table select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.users-chip {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  background: #eee;
+  color: #555;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.users-actions button {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.users-actions button:disabled {
+  cursor: not-allowed;
+  color: #999;
+}

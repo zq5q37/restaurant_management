@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiFetch } from './api';
 import { timeOf } from './dates';
+import './menu.css'; // the shared .editor__* panel styles live there
 
 // Mirrors SHIFT_ROLES in backend/schedule/store.js — anything else is a 400 from the API.
 const SHIFT_ROLES = ['server', 'host', 'cleaner', 'cook'];
