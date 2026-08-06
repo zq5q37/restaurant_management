@@ -2,12 +2,50 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta name="theme-color" content="#12100e" />
+    <title>Rokushichi · Restaurant Suite</title>
+    <!--
+      Derived from brand/rokushichi-logo-master.png — see brand/README.md. The 32px PNG is
+      the tab icon; iOS insists on a PNG for the home screen; the 512 WebP covers install
+      prompts and social cards.
+    -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta property="og:image" content="/logo-mark-512.webp" />
+    <!--
+      Zen Kaku Gothic New carries the Latin UI and headlines; Shippori Mincho carries the
+      Japanese signage text. display=swap so the first paint is never blocked on the network.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Resolve the theme before the first paint. Without this the page renders in the default
+      theme for one frame and then swaps, which is a visible flash for anyone who has chosen
+      dark. Deliberately inline, blocking and dependency-free; ThemeContext reads the
+      attribute this sets rather than resolving it a second time.
+    -->
+    <script>
+      (function () {
+        var choice = null;
+        try {
+          choice = localStorage.getItem('rms-theme');
+        } catch (e) {
+          /* blocked storage — fall through to the system preference */
+        }
+        if (choice !== 'light' && choice !== 'dark') {
+          choice = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.dataset.theme = choice;
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

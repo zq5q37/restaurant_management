@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import PageHead from './PageHead';
+import { PAGE_JP } from './labels';
 import { apiFetch } from './api';
-import './menu.css';
 import './users.css';
 
 // Mirrors ROLES in backend/routes/users.js.
@@ -107,35 +108,50 @@ function Users({ token, user, onUnauthorized }) {
 
   return (
     <div className="users">
-      <div className="users-filters">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name or email..."
-          aria-label="Search users"
-        />
+      <PageHead
+        kicker={PAGE_JP.users}
+        title="The roster"
+        sub={
+          isAdmin
+            ? 'Everyone with an account. Roles decide what each of them can reach.'
+            : 'Everyone with an account. Changing any of it is admin-only.'
+        }
+        sideValue={loading ? '—' : users.length}
+        sideLabel={users.length === 1 ? 'account' : 'accounts'}
+      />
 
-        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} aria-label="Role">
-          <option value="">All roles</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+      <div className="filter-bar">
+        <div className="filter-bar__group">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name or email..."
+            aria-label="Search users"
+          />
 
-        {(query || roleFilter) && (
-          <button
-            type="button"
-            onClick={() => {
-              setQuery('');
-              setRoleFilter('');
-            }}
-          >
-            Clear
-          </button>
-        )}
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} aria-label="Role">
+            <option value="">All roles</option>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+
+          {(query || roleFilter) && (
+            <button
+              type="button"
+              className="button--ghost"
+              onClick={() => {
+                setQuery('');
+                setRoleFilter('');
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
 
         {isAdmin && (
           <button type="button" onClick={() => setCreating((open) => !open)}>
@@ -144,48 +160,49 @@ function Users({ token, user, onUnauthorized }) {
         )}
       </div>
 
-      {isAdmin && creating && (
-        <NewUser
-          token={token}
-          onCreated={(created) => {
-            setCreating(false);
-            setNotice(`${created.full_name} created as ${created.role}.`);
-            refresh();
-          }}
-          onUnauthorized={onUnauthorized}
-        />
-      )}
+      <div className="users-body">
+        {isAdmin && creating && (
+          <NewUser
+            token={token}
+            onCreated={(created) => {
+              setCreating(false);
+              setNotice(`${created.full_name} created as ${created.role}.`);
+              refresh();
+            }}
+            onUnauthorized={onUnauthorized}
+          />
+        )}
 
-      <p className="users-status" role="status">
-        {loading
-          ? 'Loading...'
-          : `${visible.length} of ${users.length} user${users.length === 1 ? '' : 's'}`}
-      </p>
-
-      {error && (
-        <p role="alert" className="users-error">
-          {error}
+        <p className="users-status" role="status">
+          {loading
+            ? 'Loading...'
+            : `Showing ${visible.length} of ${users.length} account${users.length === 1 ? '' : 's'}`}
         </p>
-      )}
 
-      {notice && (
-        <p role="status" className="users-notice">
-          {notice}
-        </p>
-      )}
+        {error && (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        )}
 
-      {!isAdmin && (
-        <p className="users-hint">
-          You can view the list. Creating users, changing roles, deactivating and deleting are
-          admin-only.
-        </p>
-      )}
+        {notice && (
+          <p role="status" className="notice">
+            {notice}
+          </p>
+        )}
 
-      {!loading && visible.length === 0 && <p>No users match those filters.</p>}
+        {!isAdmin && (
+          <p className="users-hint">
+            You can view the list. Creating users, changing roles, deactivating and deleting are
+            admin-only.
+          </p>
+        )}
 
-      {visible.length > 0 && (
-        <div className="users-table-wrap">
-          <table className="users-table">
+        {!loading && visible.length === 0 && <p className="placeholder">No users match those filters.</p>}
+
+        {visible.length > 0 && (
+        <div className="table-scroll">
+          <table className="data-table users-table">
             <thead>
               <tr>
                 <th scope="col">Name</th>
@@ -232,9 +249,10 @@ function Users({ token, user, onUnauthorized }) {
                     <td>{row.is_active ? 'Active' : 'Deactivated'}</td>
 
                     {isAdmin && (
-                      <td className="users-actions">
+                      <td className="actions">
                         <button
                           type="button"
+                          className="button--ghost"
                           onClick={() => setActive(row, !row.is_active)}
                           disabled={isSelf || busyId === row.id}
                           title={isSelf ? 'You cannot deactivate your own account' : undefined}
@@ -246,18 +264,24 @@ function Users({ token, user, onUnauthorized }) {
                           <>
                             <button
                               type="button"
+                              className="button--danger-text"
                               onClick={() => deleteUser(row)}
                               disabled={busyId === row.id}
                             >
                               Confirm delete
                             </button>
-                            <button type="button" onClick={() => setConfirmingDelete(null)}>
+                            <button
+                              type="button"
+                              className="button--ghost"
+                              onClick={() => setConfirmingDelete(null)}
+                            >
                               Cancel
                             </button>
                           </>
                         ) : (
                           <button
                             type="button"
+                            className="button--danger-text"
                             onClick={() => setConfirmingDelete(row.id)}
                             disabled={isSelf || busyId === row.id}
                             title={isSelf ? 'You cannot delete your own account' : undefined}
@@ -272,8 +296,9 @@ function Users({ token, user, onUnauthorized }) {
               })}
             </tbody>
           </table>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -308,18 +333,18 @@ function NewUser({ token, onCreated, onUnauthorized }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="editor">
-      <div className="editor__header">
+    <form onSubmit={handleSubmit} className="panel">
+      <div className="panel__head">
         <h2>New user</h2>
       </div>
 
       {error && (
-        <p role="alert" className="users-error">
+        <p role="alert" className="form-error">
           {error}
         </p>
       )}
 
-      <div className="editor__section">
+      <div className="panel__section">
         <label htmlFor="nu-name">Name</label>
         <input id="nu-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
 
@@ -354,7 +379,7 @@ function NewUser({ token, onCreated, onUnauthorized }) {
           minLength={8}
           required
         />
-        <p className="editor__hint">
+        <p className="hint">
           At least 8 characters. The new user can change it from their own profile.
         </p>
 

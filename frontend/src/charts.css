@@ -1,62 +1,45 @@
 /*
- * Chart tokens.
+ * Chart chrome.
  *
- * The categorical slots and chrome greys are a validated set: on this white card surface
- * the pair passes the lightness band, chroma floor, colourblind separation (worst pair
- * ΔE 9.2 deutan) and normal-vision separation (ΔE 24.0). Changing a hex here means
- * re-running that check — the numbers are not decorative.
+ * Every colour here is a token, so both themes come out of one set of rules — the marks are
+ * the lantern and the street lamp, the grid is one step off the surface, and text always
+ * wears a text token rather than a series colour.
  *
- * Text never wears a series colour; identity comes from the coloured mark beside it.
+ * Charts sit in a two-up grid of bands divided by hairlines rather than in floating cards:
+ * the same structural decision as the menu's course bands, so the whole app reads as one
+ * document rather than a pile of widgets.
  */
-.chart-card {
-  --series-1: #2a78d6;
-  --series-1-track: #cde2fb;
-  --series-2: #eb6834;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --ink-muted: #898781;
-  --ink-secondary: #52514e;
-  --surface: #fff;
 
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: var(--surface);
-  padding: 0.75rem 1rem 1rem;
+.chart-card {
+  padding: 1.35rem var(--gutter) 1.6rem;
+  border-right: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
 }
 
 .chart-card__head {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
 }
 
 .chart-card__head h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.2rem;
 }
 
 .chart-card__subtitle {
-  margin: 0.15rem 0 0;
-  font-size: 0.85rem;
-  color: var(--ink-secondary);
+  max-width: 46ch;
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 
 .chart-card__actions {
   display: flex;
   gap: 0.35rem;
-}
-
-.chart-card__actions button {
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
 }
 
 .chart-plot {
@@ -83,13 +66,13 @@
 /* A wash, never a saturated block — the line carries the value, the fill carries the mass. */
 .chart-area {
   fill: var(--series-1);
-  opacity: 0.1;
+  opacity: 0.12;
 }
 
 .chart-dot {
   fill: var(--series-1);
-  stroke: var(--surface);
-  stroke-width: 2; /* surface ring, so the marker survives crossing its own line */
+  stroke: var(--bg); /* surface ring, so the marker survives crossing its own line */
+  stroke-width: 2;
 }
 
 .chart-bar,
@@ -102,24 +85,25 @@
 }
 
 .chart-grid {
-  stroke: var(--grid);
+  stroke: var(--chart-grid);
   stroke-width: 1; /* hairline, solid — dashes read as a threshold that isn't there */
 }
 
 .chart-axis-label {
-  fill: var(--ink-muted);
+  fill: var(--faint);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
-.chart-cat-label,
-.chart-value-label {
-  fill: var(--ink-secondary);
+.chart-cat-label {
+  fill: var(--muted);
   font-size: 12px;
 }
 
 .chart-value-label {
-  font-weight: 600;
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -138,7 +122,7 @@
 .chart-bar-row:focus-visible .chart-fill--primary,
 .chart-bar-row:focus-visible .chart-fill--secondary,
 .chart-hitbox:focus-visible {
-  outline: 2px solid #0b0b0b;
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -150,9 +134,9 @@
   gap: 0.25rem 1rem;
   list-style: none;
   padding: 0;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.6rem;
   font-size: 0.8rem;
-  color: var(--ink-secondary);
+  color: var(--muted);
 }
 
 .chart-legend li {
@@ -186,13 +170,15 @@
   flex-direction: column;
   gap: 0.1rem;
   max-width: 14rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-  background: #0b0b0b;
-  color: #fff;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
   font-size: 0.78rem;
   line-height: 1.35;
   white-space: nowrap;
+  box-shadow: var(--shadow-modal);
 }
 
 /* Flips to the other side of the cursor before it can run off the card. */
@@ -207,24 +193,25 @@
 }
 
 .chart-table {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse;
   font-size: 0.88rem;
 }
 
 .chart-table th,
 .chart-table td {
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--line-2);
   text-align: left;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid #eee;
 }
 
 .chart-table thead th {
-  border-bottom: 1px solid #ccc;
-  font-size: 0.78rem;
+  border-bottom-color: var(--line);
+  color: var(--accent-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--ink-secondary);
 }
 
 .chart-table .is-numeric {
@@ -234,52 +221,60 @@
 
 /* ------------------------------------------------------------ stat tiles ---- */
 
+/* Metrics are one band divided by hairlines — not four floating cards. */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  background: var(--band-lit);
+  border-bottom: 1px solid var(--line);
 }
 
 .stat-tile {
-  border: 1px solid #ddd;
-  border-left: 4px solid var(--stat-accent, #c3c2b7);
-  border-radius: 6px;
-  background: #fff;
-  padding: 0.6rem 0.75rem;
+  padding: 1.15rem 1.25rem 1.25rem;
+  border-right: 1px solid var(--line);
 }
 
-.stat-tile--good {
-  --stat-accent: #0ca30c;
+.stat-tile:last-child {
+  border-right: 0;
 }
 
+/* Status is carried by a rule on the leading edge as well as by the word in the detail
+   line, so it never rests on colour alone. */
 .stat-tile--warning {
-  --stat-accent: #fab219;
+  box-shadow: inset 4px 0 0 var(--accent);
 }
 
 .stat-tile--critical {
-  --stat-accent: #d03b3b;
+  box-shadow: inset 4px 0 0 var(--sign);
+}
+
+.stat-tile--good {
+  box-shadow: inset 4px 0 0 var(--leaf);
 }
 
 .stat-tile__label {
   margin: 0;
-  font-size: 0.8rem;
-  color: #52514e;
+  color: var(--accent-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 /* Proportional figures on purpose: tabular-nums makes a display-size number look loose. */
 .stat-tile__value {
-  margin: 0.1rem 0 0;
-  font-size: 1.6rem;
-  font-weight: 600;
-  line-height: 1.1;
-  color: #0b0b0b;
+  margin: 0.35rem 0 0;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 .stat-tile__sub {
-  margin: 0.15rem 0 0;
-  font-size: 0.78rem;
-  color: #898781;
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 
 /* ---------------------------------------------------------------- meters ---- */
@@ -290,7 +285,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
 .meter-list__head {
@@ -298,7 +293,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   text-transform: capitalize;
 }
 
@@ -309,8 +304,8 @@
 .meter {
   height: 10px;
   border-radius: 5px;
-  /* Track is a light step of the fill's own ramp, so the shortfall reads as the same scale. */
-  background: var(--series-1-track, #cde2fb);
+  /* Track is a dim step of the fill's own hue, so the shortfall reads on the same scale. */
+  background: var(--series-1-track);
   overflow: hidden;
 }
 
@@ -318,26 +313,27 @@
   display: block;
   height: 100%;
   border-radius: 5px;
-  background: var(--series-1, #2a78d6);
+  background: var(--series-1);
 }
 
 .meter__fill--warning {
-  background: #fab219;
+  background: var(--accent-dim);
 }
 
 .meter__fill--critical {
-  background: #d03b3b;
+  background: var(--sign);
 }
 
 .meter-list__note {
   margin: 0.2rem 0 0;
+  color: var(--muted);
   font-size: 0.78rem;
-  color: #898781;
 }
 
 .chart-empty {
   margin: 0;
   padding: 1rem 0;
-  color: #898781;
+  color: var(--faint);
   font-size: 0.9rem;
+  font-style: italic;
 }

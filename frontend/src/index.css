@@ -1,22 +1,1095 @@
 /*
- * Base only. Deliberately not a redesign of the login, navbar or profile pages — those stay
- * as plain elements. This is the minimum needed for the menu grid to lay out sensibly.
+ * Two themes, one system. Ported from restaurant_management_v1, whose tokens were sampled
+ * from photographs of the shop rather than invented.
+ *
+ * DARK — "Lantern Alley": an izakaya alley after dark. Warm-black shadow, lantern amber,
+ * lit-paper cream, sign red, and the cold glass street lamps as the counterpart to the
+ * lantern's warmth.
+ *
+ * LIGHT — "Cat Cafe": white square tile with grey grout, blond wood, black hand-painted
+ * signage, and the mustard of the cat hammock. It is not the dark theme inverted — it is a
+ * different room, and both rooms are real places.
+ *
+ * THE ONE RULE FOR ADDING COLOUR: use a token. A literal hex in a rule is a bug in one of
+ * the two themes, usually the one you are not looking at.
+ *
+ * The motif inverts for free. `.lantern` is `background: var(--text); color: var(--bg)`, so
+ * in the dark it is a cream paper lantern lit from behind and in the light it is a black
+ * painted signboard — the same object in each photograph, no second rule.
+ *
+ * Contrast: every text token clears WCAG AA 4.5:1 against the background it is used on, in
+ * both themes, and no state is carried by colour alone. The ratios were measured.
  */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* surfaces */
+  --bg: #12100e;
+  --bg-chrome: #0c0a09;
+  --surface: #1e1915;
+  --surface-2: #241e19;
+  --field-bg: #171310;
+  --band-lit: #1d1711;
+
+  /* lines */
+  --line: #2a231d;
+  --line-2: #221c17;
+  --line-strong: #33291f;
+  --field-border: #352c24;
+
+  /* text — 15.0:1, 6.6:1 and 5.0:1 against --bg */
+  --text: #f3e3c4;
+  --muted: #a4977f;
+  --faint: #8b8172;
+
+  /* accent: the lantern. One colour, three jobs. */
+  --accent: #e8a24c;          /* filled fields: buttons, active chips, bars */
+  --on-accent: #17120b;       /* text on top of --accent — 8.5:1 */
+  --accent-text: #e8a24c;     /* accent as text on --bg — 9.5:1 */
+  --accent-dim: #a86f28;      /* accent as a rule or ring */
+  --focus: #e8a24c;
+
+  /* status */
+  --sign: #b93a22;            /* shop signage red: errors, destructive, understaffed */
+  --sign-soft: #2a1712;
+  --sign-border: #4a241a;
+  --sign-text: #eda78d;
+  --on-sign: #ffffff;
+
+  --lamp: #7e9aa6;            /* cold street lamps: closed, off the menu, unknown */
+  --lamp-soft: #1c262a;
+  --lamp-border: #33454d;
+
+  --leaf: #6f9464;            /* the shop's plants: success */
+  --leaf-soft: #182116;
+  --leaf-border: #2c3d28;
+
+  --wood: #6e4e30;
+
+  --lantern-sub: #6d5426;
+  --lantern-lift: 0 0 26px -6px rgb(232 162 76 / 42%);
+
+  --ghost-bg: #1c1713;
+  --ghost-border: #3a3028;
+  --ghost-text: #c2b8a4;
+
+  --shadow-modal: 0 24px 60px -20px #000;
+
+  /*
+   * Charts. The pair is the lantern and the street lamp — the warm/cold opposition the rest
+   * of the system already uses, which is also what makes it separable: normal-vision ΔE 19.0
+   * and worst-case CVD ΔE 14.9 against a floor of 15 and 8 (measured with the validator, not
+   * eyeballed). Sign red was the first choice and was rejected: in the light theme ochre and
+   * red measure ΔE 14.5, below the floor — hard to tell apart even with full colour vision.
+   *
+   * Two deliberate deviations, both kept and both documented rather than silently ignored:
+   * the amber sits above the dark-mode lightness band (L 0.764) because it is the one light
+   * source in the photograph, and the lamp sits below the chroma floor (reads grey) because
+   * the thing it encodes — staffing still needed — should read as absence.
+   */
+  --series-1: #e8a24c;
+  --series-1-track: #3a2c19;
+  --series-2: #7e9aa6;
+  --chart-grid: #241e19;
+
+  --disp: 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --jp: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+
+  --max-width: 1440px;
+  --gutter: 2rem;
+  --radius: 4px;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* surfaces — the tile face, and the grout-shadowed tile for chrome */
+  --bg: #f6f4ef;
+  --bg-chrome: #efece4;
+  --surface: #fffefb;
+  --surface-2: #e8e4da;
+  --field-bg: #fffefb;
+  --band-lit: #fbf3e2;          /* a wash of the hammock mustard */
+
+  /* lines — grout */
+  --line: #ddd8ce;
+  --line-2: #e7e3da;
+  --line-strong: #c9c2b4;
+  --field-border: #cfc8bb;
+
+  /* text — the black painted signage. 16.9:1, 5.3:1 and 5.0:1 against --bg */
+  --text: #14130f;
+  --muted: #6b6459;
+  --faint: #6f6958;
+
+  /*
+   * The accent has to split here. The hammock mustard is only ~1.9:1 on white, so it can be
+   * a field but never text; the deep ochre of the wood in shadow carries the accent wherever
+   * it has to be read.
+   */
+  --accent: #e0a32e;            /* field — 8.2:1 with --on-accent on top */
+  --on-accent: #14130f;
+  --accent-text: #8a5a12;       /* accent as text — 5.8:1 */
+  --accent-dim: #c98f52;
+  --focus: #8a5a12;
+
+  --sign: #a82f16;
+  --sign-soft: #fbeee9;
+  --sign-border: #e9c3b6;
+  --sign-text: #8f2810;
+  --on-sign: #ffffff;
+
+  --lamp: #4e6672;
+  --lamp-soft: #eef2f4;
+  --lamp-border: #c6d3d8;
+
+  --leaf: #3f6b33;
+  --leaf-soft: #eef4ea;
+  --leaf-border: #c6d9bd;
+
+  --wood: #c88a4a;
+
+  /*
+   * The lantern becomes a painted signboard: an ink plate with a wood edge. A glow makes no
+   * sense on a white wall, so the lift is a solid bottom edge instead — the depth of a
+   * physical sign rather than the bloom of a lit one.
+   */
+  --lantern-sub: #b3a891;
+  --lantern-lift: 0 3px 0 var(--wood);
+
+  --ghost-bg: #fffefb;
+  --ghost-border: #cfc8bb;
+  --ghost-text: #3c3830;
+
+  --shadow-modal: 0 24px 60px -24px rgb(20 19 15 / 28%);
+
+  /* The mustard is a field colour only, so the series is the wood-in-shadow ochre. Same
+     lantern/lamp pairing as the dark theme: normal-vision ΔE 18.0, worst CVD ΔE 14.6. */
+  --series-1: #a8700f;
+  --series-1-track: #f0e2c8;
+  --series-2: #4e6672;
+  --chart-grid: #e7e3da;
+}
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+}
+
 body {
   margin: 0;
-  padding: 1rem;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  line-height: 1.5;
-  color: #1a1a1a;
-  background: #fafafa;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--disp);
+  font-size: 15px;
+  line-height: 1.55;
+  text-wrap: pretty;
+  -webkit-font-smoothing: antialiased;
 }
 
 img {
   max-width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ------------------------------------------------------------------- shell --- */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* The top command bar is the only chrome in the app. */
+.app-header {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 1.25rem;
+  isolation: isolate; /* contains the logo's multiply blend — see .brand__mark */
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 900;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/*
+ * The logo is printed on textured cream paper, so dropping it straight onto the amber plate
+ * would show as a pale square patch. multiply lets the amber through the paper — the ink
+ * stays black, the gold enso deepens, and the paper ground disappears. It is the closest a
+ * browser gets to the artwork being printed on the sign rather than stuck to it.
+ */
+.brand__mark {
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: none;
+  mix-blend-mode: multiply;
+}
+
+.brand__name {
+  letter-spacing: 0.02em;
+}
+
+.app-nav {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  flex: 1;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.app-nav button {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 0.9rem 1.05rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.app-nav button:hover:not(:disabled) {
+  background: none;
+  color: var(--text);
+  filter: none;
+}
+
+.app-nav button[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.app-user {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0 1.25rem;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.app-user strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.app-user button {
+  margin-top: 0;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--field-border);
+  background: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.app-user button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: none;
+  color: var(--accent-text);
+  filter: none;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* Full-bleed band sections need the page itself to have no padding; ordinary documents opt
+   into the gutter with .page--padded. */
+.page--padded,
+.page--narrow {
+  padding: 1.75rem var(--gutter) 3rem;
+}
+
+.page--narrow {
+  max-width: 27rem;
+  margin: 0 auto;
+}
+
+.app-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  padding: 0.7rem var(--gutter);
+  border-top: 1px solid var(--line);
+  background: var(--bg-chrome);
+  color: var(--faint);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/*
+ * The full lockup on the sign-in screen. The artwork is on cream paper, so on the night
+ * background it reads as a lit sign on the wall; in the light theme it sits on tile that is
+ * almost the same cream, and the hairline is what stops it dissolving into the page.
+ */
+.signin-logo {
+  display: block;
+  width: 100%;
+  max-width: 15rem;
+  height: auto;
+  margin: 0 auto 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* The sign-in screen has no header to hang the toggle on, so it gets its own corner. */
+.signin {
+  display: flex;
+  flex-direction: column;
+  padding-top: 2.5rem;
+}
+
+.signin__toggle {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--gutter);
+}
+
+.signin__title {
+  margin-bottom: 0.15rem;
+  font-size: 1.6rem;
+}
+
+/* Stacked explicitly rather than relying on a global `form` rule: the filter bars are forms
+   too, and they must stay horizontal. */
+.signin__form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.signin__submit {
+  margin-top: 1.25rem;
+}
+
+.signin__seed {
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.signin__seed .chip-row {
+  margin-top: 0.5rem;
+}
+
+.placeholder,
+.loading {
+  color: var(--faint);
+  font-style: italic;
+}
+
+.loading {
+  padding: 1.75rem var(--gutter);
+}
+
+/* ---------------------------------------------------------- theme toggle --- */
+
+/*
+ * One button whose icon morphs sun to moon, after the 21st.dev animated-theme-toggle. That
+ * component is Tailwind and Framer Motion; this is the same behaviour in plain CSS, because
+ * the morph is a mask offset and two transforms and needs neither.
+ */
+.theme-toggle {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0 !important;
+  border: 1px solid var(--field-border);
+  border-radius: 999px;
+  background: var(--field-bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--field-bg);
+  color: var(--accent-text);
+  filter: none;
+}
+
+.theme-toggle__icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  overflow: visible;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  /* The whole glyph counter-rotates as it changes, which sells the morph more than either
+     the mask or the rays do on their own. */
+  transform: rotate(0deg);
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle__disc {
+  stroke: none;
+  transition: r 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Parked clear of the disc, so the sun is a whole circle. */
+.theme-toggle__bite {
+  transform: translate(0, 0);
+  transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle__rays {
+  transform-origin: 12px 12px;
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+  transition:
+    transform 520ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 260ms ease-out;
+}
+
+/* Dark theme: the moon. The bite slides over the disc, the rays retract into it. */
+.theme-toggle[data-theme-state='dark'] .theme-toggle__icon {
+  transform: rotate(-135deg);
+}
+
+.theme-toggle[data-theme-state='dark'] .theme-toggle__disc {
+  r: 6.4;
+}
+
+.theme-toggle[data-theme-state='dark'] .theme-toggle__bite {
+  transform: translate(-8px, 0);
+}
+
+.theme-toggle[data-theme-state='dark'] .theme-toggle__rays {
+  transform: rotate(-45deg) scale(0.35);
+  opacity: 0;
+}
+
+/*
+ * The theme change sweeps in as a circle growing from the button. The default cross-fade is
+ * switched off so the incoming snapshot is revealed by the clip-path animation in
+ * ThemeContext instead; the outgoing one stays underneath, which is what makes it read as a
+ * wipe rather than a dissolve. Unsupported in Firefox and Safari, where the theme just
+ * changes — which is why nothing here is load-bearing.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* ------------------------------------------------------------- page header --- */
+
+/* Every screen opens with the same band: a Japanese kicker, the title, one line of
+   plain-English orientation, and the single number that matters on the right. */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.75rem var(--gutter) 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-chrome);
+}
+
+.page-head__kicker {
+  margin: 0 0 0.5rem;
+  color: var(--accent-text);
+  font-family: var(--jp);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+
+.page-head h1 {
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.page-head__sub {
+  max-width: 46ch;
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+
+.page-head__side {
+  flex: none;
+  text-align: right;
+}
+
+.page-head__side b {
+  display: block;
+  color: var(--accent-text);
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.page-head__side span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* --------------------------------------------------------------- controls --- */
+
+/* One control strip under the header, scoping everything below it. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.7rem var(--gutter);
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--line);
+}
+
+.filter-bar__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.filter-bar__group label {
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  margin: 0;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: var(--field-bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent-dim);
+  background: var(--field-bg);
+  color: var(--text);
+  filter: none;
+}
+
+.chip--active,
+.chip[aria-pressed='true'],
+.chip[aria-selected='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+}
+
+.segmented button {
+  margin: 0;
+  padding: 0.35rem 0.8rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--field-bg);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.segmented button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+  filter: none;
+}
+
+.segmented button[aria-pressed='true'],
+.segmented button.is-active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- forms --- */
+
+label {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+input,
+select,
+textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: var(--field-bg);
+  color: var(--text);
+  font: inherit;
+}
+
+input::placeholder {
+  color: var(--faint);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button {
+  margin-top: 0;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  /* Lightens in the dark, deepens in the light — both read as "closer to the hand". */
+  filter: brightness(1.08);
+}
+
+:root[data-theme='light'] button:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The default button is the amber plate; most buttons in a dense UI should not be. */
+.button--ghost {
+  padding: 0.32rem 0.65rem;
+  border: 1px solid var(--ghost-border);
+  background: var(--ghost-bg);
+  color: var(--ghost-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.button--ghost:hover:not(:disabled) {
+  border-color: var(--accent-dim);
+  background: var(--surface-2);
+  color: var(--text);
+  filter: none;
+}
+
+.button--danger-text {
+  padding: 0.32rem 0.65rem;
+  border: 1px solid var(--sign-border);
+  background: var(--sign-soft);
+  color: var(--sign-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.button--danger-text:hover:not(:disabled) {
+  border-color: var(--sign);
+  background: var(--sign-soft);
+  color: var(--sign);
+  filter: none;
+}
+
+.hint {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.form-error,
+.notice {
+  margin: 0.6rem 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+
+.form-error {
+  border: 1px solid var(--sign-border);
+  border-left: 4px solid var(--sign);
+  background: var(--sign-soft);
+  color: var(--sign-text);
+}
+
+.notice {
+  border: 1px solid var(--leaf-border);
+  border-left: 4px solid var(--leaf);
+  background: var(--leaf-soft);
+  color: var(--leaf);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- panels --- */
+
+.panel {
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem 1.35rem;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel h2,
+.panel h3 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.panel__section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  max-width: 32rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line-2);
+}
+
+.panel__section h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.panel__section input,
+.panel__section select,
+.panel__section textarea {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.panel__section > button {
+  margin-top: 0.75rem;
+}
+
+.panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.panel__modes {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.panel__modes legend {
+  padding: 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel__modes label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
+.panel__modes input {
+  width: auto;
+  accent-color: var(--accent);
+}
+
+.panel__thumb {
+  width: 8rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* Name and Remove on one line per person, so the list reads as a roster. */
+.roster {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.roster li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+/* ------------------------------------------------------------ data table --- */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--line-2);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.data-table th {
+  border-bottom-color: var(--line);
+  color: var(--accent-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.data-table .is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.row--muted td {
+  color: var(--faint);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+/* ---------------------------------------------------------------- badges --- */
+
+.badge {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.badge--special {
+  background: var(--sign);
+  color: var(--on-sign);
+}
+
+.badge--muted {
+  background: var(--lamp-soft);
+  color: var(--lamp);
+  box-shadow: inset 0 0 0 1px var(--lamp-border);
+}
+
+.badge--accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* -------------------------------- MOTIF · the lantern / the signboard --- */
+
+/*
+ * The same block in both themes, inverted by the tokens rather than by a second rule: in the
+ * dark it is a cream paper lantern lit from behind; in the light it is a black hand-painted
+ * signboard with a wood edge. Both are objects from their photograph.
+ */
+.lantern {
+  display: inline-block;
+  padding: 0.5rem 0.9rem 0.55rem;
+  border-radius: 9px / 13px;
+  background: var(--text);
+  color: var(--bg);
+  text-align: center;
+  box-shadow: var(--lantern-lift), inset 0 0 0 2px var(--accent-dim);
+}
+
+.lantern__jp {
+  display: block;
+  font-family: var(--jp);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.1;
+}
+
+.lantern__en {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--lantern-sub);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------ responsive --- */
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 1.1rem;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand {
+    padding: 0.65rem 1.1rem;
+  }
+
+  .app-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .app-nav button {
+    white-space: nowrap;
+  }
+
+  .app-user {
+    margin-left: 0;
+    padding: 0.6rem 1.1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .page-head,
+  .filter-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-head__side {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

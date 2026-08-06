@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, formatPrice } from './api';
 import ItemEditor from './ItemEditor';
+import PageHead from './PageHead';
+import { CATEGORY_JP, PAGE_JP } from './labels';
 import './menu.css';
 
 const SORTS = [
@@ -150,83 +152,137 @@ function Menu({ token, user, onUnauthorized }) {
 
   return (
     <div className="menu">
-      <div className="menu-filters">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search dishes..."
-          aria-label="Search menu"
-        />
+      <PageHead
+        kicker={PAGE_JP.menu}
+        title="Tonight's menu"
+        sub={
+          canManage
+            ? 'Everything the kitchen is serving. Prices, photography and availability are edited here.'
+            : 'Everything the kitchen is serving tonight.'
+        }
+        sideValue={loading ? '—' : total}
+        sideLabel={total === 1 ? 'dish' : 'dishes'}
+      />
 
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} aria-label="Category">
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({c.item_count})
-            </option>
-          ))}
-        </select>
+      <div className="filter-bar">
+        <div className="filter-bar__group">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search dishes..."
+            aria-label="Search menu"
+          />
 
-        {canFilterAvailability && (
-          <select value={availability} onChange={(e) => setAvailability(e.target.value)} aria-label="Availability">
-            <option value="">Any availability</option>
-            <option value="true">Available only</option>
-            <option value="false">Unavailable only</option>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} aria-label="Category">
+            <option value="">All courses</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.item_count})
+              </option>
+            ))}
           </select>
-        )}
 
-        <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by">
-          {SORTS.map((s) => (
-            <option key={s.value} value={s.value}>
-              Sort: {s.label}
-            </option>
-          ))}
-        </select>
+          {canFilterAvailability && (
+            <select value={availability} onChange={(e) => setAvailability(e.target.value)} aria-label="Availability">
+              <option value="">Any availability</option>
+              <option value="true">Available only</option>
+              <option value="false">Off the menu</option>
+            </select>
+          )}
 
-        {hasFilters && (
-          <button type="button" onClick={clearFilters}>
-            Clear
-          </button>
-        )}
+          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort by">
+            {SORTS.map((s) => (
+              <option key={s.value} value={s.value}>
+                Sort: {s.label}
+              </option>
+            ))}
+          </select>
+
+          {hasFilters && (
+            <button type="button" className="button--ghost" onClick={clearFilters}>
+              Clear
+            </button>
+          )}
+        </div>
 
         {canManage && (
           <button type="button" onClick={() => setEditing('new')}>
-            + New item
+            + New dish
           </button>
         )}
       </div>
 
       {canManage && editing && (
-        <ItemEditor
-          token={token}
-          categories={categories}
-          item={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
-          onSaved={handleSaved}
-          onUnauthorized={onUnauthorized}
-        />
+        <div className="page--padded">
+          <ItemEditor
+            token={token}
+            categories={categories}
+            item={editing === 'new' ? null : editing}
+            onClose={() => setEditing(null)}
+            onSaved={handleSaved}
+            onUnauthorized={onUnauthorized}
+          />
+        </div>
       )}
 
-      <p className="menu-status" role="status">
-        {loading ? 'Loading...' : `${total} item${total === 1 ? '' : 's'}`}
-      </p>
+      {error && (
+        <p role="alert" className="form-error page--padded">
+          {error}
+        </p>
+      )}
 
-      {error && <p role="alert" className="menu-error">{error}</p>}
+      {loading && <p className="menu-status" role="status">Loading...</p>}
 
       {!loading && !error && items.length === 0 && (
-        <p>No dishes match those filters.</p>
+        <p className="menu-empty">No dishes match those filters.</p>
       )}
 
       {grouped
         ? Object.entries(grouped).map(([categoryName, categoryItems]) => (
-            <section key={categoryName}>
-              <h2>{categoryName}</h2>
+            <Course key={categoryName} name={categoryName} items={categoryItems}>
               <ItemGrid items={categoryItems} {...gridProps} />
-            </section>
+            </Course>
           ))
-        : items.length > 0 && <ItemGrid items={items} {...gridProps} />}
+        : items.length > 0 && (
+            <Course name="Results" items={items} sorted>
+              <ItemGrid items={items} {...gridProps} />
+            </Course>
+          )}
     </div>
+  );
+}
+
+/**
+ * One course of the menu: its lantern in the left margin, its dishes across the band.
+ *
+ * The band lights up when something in it is on special — the same signal a shop gives by
+ * putting a lit sign outside the thing it wants you to notice.
+ */
+function Course({ name, items, sorted, children }) {
+  const lit = items.some((item) => item.is_on_special);
+  const jp = CATEGORY_JP[name];
+
+  return (
+    <section className={`course${lit ? ' course--lit' : ''}`}>
+      <div className="course__name">
+        <span className="lantern">
+          {jp && (
+            <span className="lantern__jp" lang="ja">
+              {jp}
+            </span>
+          )}
+          <span className="lantern__en">{name}</span>
+        </span>
+
+        <span className="course__count">
+          {items.length} {items.length === 1 ? 'dish' : 'dishes'}
+          {sorted ? ' · sorted' : ''}
+        </span>
+      </div>
+
+      {children}
+    </section>
   );
 }
 
@@ -279,18 +335,18 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete, onOpen, isOpen 
         <p className="menu-card__price">
           {item.is_on_special ? (
             <>
-              <s>{formatPrice(item.price_cents)}</s>{' '}
-              <strong>{formatPrice(item.effective_price_cents)}</strong>{' '}
-              <span className="menu-badge menu-badge--special">Special</span>
+              <s>{formatPrice(item.price_cents)}</s>
+              <strong>{formatPrice(item.effective_price_cents)}</strong>
+              <span className="badge badge--special">Special</span>
             </>
           ) : (
             <strong>{formatPrice(item.price_cents)}</strong>
           )}
-        </p>
 
-        {!item.is_available && (
-          <span className="menu-badge menu-badge--unavailable">Unavailable</span>
-        )}
+          {/* The lamp badge, not colour alone: "off the menu" is also carried by the word
+              and by the greyed photograph above it. */}
+          {!item.is_available && <span className="badge badge--muted">Off the menu</span>}
+        </p>
 
         {isOpen && (
           <dl className="menu-card__details">
@@ -306,24 +362,24 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete, onOpen, isOpen 
 
         {canManage && (
           <div className="menu-card__actions">
-            <button type="button" onClick={() => onEdit(item)}>
+            <button type="button" className="button--ghost" onClick={() => onEdit(item)}>
               Edit
             </button>
-            <button type="button" onClick={() => onToggle(item)}>
-              {item.is_available ? 'Mark unavailable' : 'Mark available'}
+            <button type="button" className="button--ghost" onClick={() => onToggle(item)}>
+              {item.is_available ? 'Take off menu' : 'Put back on'}
             </button>
 
             {confirmingDelete ? (
               <>
-                <button type="button" onClick={() => onDelete(item)}>
+                <button type="button" className="button--danger-text" onClick={() => onDelete(item)}>
                   Confirm delete
                 </button>
-                <button type="button" onClick={() => setConfirmingDelete(false)}>
+                <button type="button" className="button--ghost" onClick={() => setConfirmingDelete(false)}>
                   Cancel
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => setConfirmingDelete(true)}>
+              <button type="button" className="button--danger-text" onClick={() => setConfirmingDelete(true)}>
                 Delete
               </button>
             )}

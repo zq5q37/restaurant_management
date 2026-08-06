@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import Login from './Login';
-import Navbar, { NAV_ITEMS } from './Navbar';
+import Navbar from './Navbar';
 import Profile from './Profile';
 import Menu from './Menu';
 import Schedule from './Schedule';
 import Users from './Users';
 import Analytics from './Analytics';
+import ThemeProvider from './ThemeProvider';
 
 const TOKEN_KEY = 'auth_token';
 
@@ -44,40 +45,55 @@ function App() {
     setUser(newUser);
   }
 
-  if (token && checking) return <p>Loading...</p>;
-  if (!user) return <Login onSuccess={handleLogin} />;
-
-  const label = NAV_ITEMS.find((item) => item.key === page)?.label ?? page;
-
+  // The shell wraps the signed-out state too, so the sign-in screen is the shop's front
+  // door rather than a bare form on a white page.
   return (
-    <div>
-      <Navbar user={user} current={page} onNavigate={setPage} onLogout={handleLogout} />
+    <ThemeProvider>
+      <div className="app-shell">
+        {token && checking ? (
+          <main className="app-main">
+            <p className="loading">Loading...</p>
+          </main>
+        ) : !user ? (
+          <Login onSuccess={handleLogin} />
+        ) : (
+          <>
+            <Navbar user={user} current={page} onNavigate={setPage} onLogout={handleLogout} />
 
-      <main>
-        <h1>{label}</h1>
-        {page === 'menu' && (
-          <Menu token={token} user={user} onUnauthorized={handleLogout} />
+            <main className="app-main">
+              {page === 'menu' && (
+                <Menu token={token} user={user} onUnauthorized={handleLogout} />
+              )}
+              {page === 'schedule' && (
+                <Schedule token={token} user={user} onUnauthorized={handleLogout} />
+              )}
+              {page === 'analytics' && (
+                <Analytics token={token} user={user} onUnauthorized={handleLogout} />
+              )}
+              {page === 'users' && (
+                <Users token={token} user={user} onUnauthorized={handleLogout} />
+              )}
+              {page === 'profile' && (
+                <Profile
+                  token={token}
+                  user={user}
+                  onUpdated={setUser}
+                  onUnauthorized={handleLogout}
+                />
+              )}
+              {!IMPLEMENTED_PAGES.includes(page) && (
+                <p className="loading">Nothing here yet.</p>
+              )}
+            </main>
+          </>
         )}
-        {page === 'schedule' && (
-          <Schedule token={token} user={user} onUnauthorized={handleLogout} />
-        )}
-        {page === 'analytics' && (
-          <Analytics token={token} user={user} onUnauthorized={handleLogout} />
-        )}
-        {page === 'users' && (
-          <Users token={token} user={user} onUnauthorized={handleLogout} />
-        )}
-        {page === 'profile' && (
-          <Profile
-            token={token}
-            user={user}
-            onUpdated={setUser}
-            onUnauthorized={handleLogout}
-          />
-        )}
-        {!IMPLEMENTED_PAGES.includes(page) && <p>Nothing here yet.</p>}
-      </main>
-    </div>
+
+        <footer className="app-foot">
+          <span>Rokushichi</span>
+          <span>Kitchen open 18:00 &ndash; 21:30</span>
+        </footer>
+      </div>
+    </ThemeProvider>
   );
 }
 

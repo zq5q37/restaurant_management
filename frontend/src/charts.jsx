@@ -107,7 +107,11 @@ export function ChartCard({ title, subtitle, action, table, wide, children }) {
         <div className="chart-card__actions">
           {action}
           {table && (
-            <button type="button" onClick={() => setShowTable((open) => !open)}>
+            <button
+              type="button"
+              className="button--ghost"
+              onClick={() => setShowTable((open) => !open)}
+            >
               {showTable ? 'Chart' : 'Table'}
             </button>
           )}

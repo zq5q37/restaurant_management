@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from './api';
+import PageHead from './PageHead';
+import { PAGE_JP } from './labels';
 import { addDays, todayString, weekStart } from './dates';
 import {
   BarList,
@@ -143,20 +145,30 @@ function Analytics({ token, user, onUnauthorized }) {
 
   return (
     <div className="analytics">
+      {/* No side figure: the range is a filter, not a measure, and it is already stated under
+          the tabs. A header that repeats what is directly below it gets read as neither. */}
+      <PageHead
+        kicker={PAGE_JP.analytics}
+        title="The numbers"
+        sub="What the menu, the roster and the system have been doing over the range below."
+      />
+
       {/* One filter row above everything it scopes, so every chart shows the same slice. */}
       <div className="analytics-filters">
-        <div className="analytics-presets" role="group" aria-label="Date range">
+        <ul className="chip-row" aria-label="Date range">
           {PRESETS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => applyPreset(p.key)}
-              aria-pressed={preset === p.key}
-            >
-              {p.label}
-            </button>
+            <li key={p.key}>
+              <button
+                type="button"
+                className="chip"
+                onClick={() => applyPreset(p.key)}
+                aria-pressed={preset === p.key}
+              >
+                {p.label}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
 
         <div className="analytics-custom">
           <label htmlFor="an-from">From</label>
@@ -186,11 +198,16 @@ function Analytics({ token, user, onUnauthorized }) {
 
         <div className="analytics-exports">
           {source.csv && (
-            <button type="button" onClick={downloadCsv} disabled={exporting || loading}>
+            <button
+              type="button"
+              className="button--ghost"
+              onClick={downloadCsv}
+              disabled={exporting || loading}
+            >
               {exporting ? 'Preparing...' : 'Export CSV'}
             </button>
           )}
-          <button type="button" onClick={() => window.print()}>
+          <button type="button" className="button--ghost" onClick={() => window.print()}>
             Save as PDF
           </button>
         </div>
@@ -211,8 +228,7 @@ function Analytics({ token, user, onUnauthorized }) {
       </div>
 
       <p className="analytics-range" role="status">
-        {formatDate(from)} to {formatDate(to)}
-        {loading && ' — updating...'}
+        {loading ? 'Updating...' : `${formatDate(from)} to ${formatDate(to)}`}
       </p>
 
       {error && (

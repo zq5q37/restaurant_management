@@ -73,17 +73,17 @@ function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized 
   }
 
   return (
-    <div className="editor">
-      <div className="editor__header">
+    <div className="panel">
+      <div className="panel__head">
         <h2>{isNew ? 'New menu item' : `Edit: ${item.name}`}</h2>
-        <button type="button" onClick={onClose}>
+        <button type="button" onClick={onClose} className="button--ghost">
           Close
         </button>
       </div>
 
-      {error && <p role="alert" className="menu-error">{error}</p>}
+      {error && <p role="alert" className="form-error">{error}</p>}
 
-      <form onSubmit={handleDetailsSubmit} className="editor__section">
+      <form onSubmit={handleDetailsSubmit} className="panel__section">
         <h3>Details</h3>
 
         <label htmlFor="ed-category">Category</label>
@@ -171,7 +171,7 @@ function PricingSection({ token, item, run }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="editor__section">
+    <form onSubmit={handleSubmit} className="panel__section">
       <h3>Pricing</h3>
 
       <label htmlFor="pr-base">Base price ($)</label>
@@ -185,11 +185,11 @@ function PricingSection({ token, item, run }) {
         onChange={(e) => setCost(e.target.value)}
         placeholder="4.20"
       />
-      <p className="editor__hint">
+      <p className="hint">
         What the ingredients cost. Drives margin reporting in Analytics; leave blank if unknown.
       </p>
 
-      <fieldset className="editor__modes">
+      <fieldset className="panel__modes">
         <legend>Special</legend>
         {[
           ['none', 'No special'],
@@ -254,7 +254,7 @@ function PricingSection({ token, item, run }) {
         </>
       )}
 
-      <p className="editor__hint">
+      <p className="hint">
         Currently charging <strong>{formatPrice(item.effective_price_cents)}</strong>
         {item.is_on_special ? ' (special active)' : ''}
       </p>
@@ -293,13 +293,13 @@ function ImageSection({ token, item, run }) {
   }
 
   return (
-    <form onSubmit={handleUpload} className="editor__section">
+    <form onSubmit={handleUpload} className="panel__section">
       <h3>Image</h3>
 
       {item.image_path ? (
-        <img className="editor__thumb" src={`/api/images/${item.image_path}`} alt={item.name} />
+        <img className="panel__thumb" src={`/api/images/${item.image_path}`} alt={item.name} />
       ) : (
-        <p className="editor__hint">No image yet.</p>
+        <p className="hint">No image yet.</p>
       )}
 
       <input
@@ -307,7 +307,7 @@ function ImageSection({ token, item, run }) {
         accept="image/jpeg,image/png,image/webp"
         onChange={(e) => setFile(e.target.files[0] ?? null)}
       />
-      <p className="editor__hint">JPEG, PNG or WebP, up to 2 MB.</p>
+      <p className="hint">JPEG, PNG or WebP, up to 2 MB.</p>
 
       <div>
         <button type="submit" disabled={!file}>

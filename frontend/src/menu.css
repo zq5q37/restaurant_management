@@ -1,254 +1,254 @@
-.menu-filters {
+/*
+ * The menu is the shop's own document, so it is set as one — courses running across the
+ * page, each with its lantern in the left margin, dishes divided by hairlines. Not a grid
+ * of floating cards: cards make every dish look like a product tile, and a restaurant menu
+ * is a list of what is being served tonight.
+ */
+
+/* ------------------------------------------------- menu · course bands --- */
+
+.course {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  border-bottom: 1px solid var(--line-2);
+}
+
+/* The band with a special running is the lit one. It brightens in the dark and warms in the
+   light; either way the food photography keeps its own colour. */
+.course--lit {
+  background: var(--band-lit);
+  box-shadow: inset 0 1px 0 var(--line-strong);
+}
+
+.course__name {
+  padding: 1.5rem 0 1.6rem var(--gutter);
+}
+
+/* block + fit-content, not inline-block: as an inline it sits beside a narrow lantern and
+   wraps under a wide one, so the caption moves around from course to course. */
+.course__count {
+  display: block;
+  width: fit-content;
+  margin-top: 0.7rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.menu-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.menu-filters input[type='search'] {
-  /* Grows to fill a narrow row but is capped, so the selects stay on screen on wide displays. */
-  flex: 1 1 14rem;
-  max-width: 24rem;
-  min-width: 0;
-}
-
-.menu-filters input,
-.menu-filters select,
-.menu-filters button {
-  padding: 0.4rem 0.6rem;
-  font: inherit;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background: #fff;
-}
-
-.menu-status {
-  margin: 0 0 1rem;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.menu-error {
-  color: #b00020;
-}
-
-/*
- * auto-fill + minmax is the whole responsive story: the browser fits as many 15rem columns as
- * will fit and reflows to fewer on narrow screens. No media queries, no breakpoints to maintain.
- */
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 1rem;
+  padding: 1.5rem var(--gutter) 1.6rem 0;
+  margin: 0;
   list-style: none;
-  padding: 0;
-  margin: 0 0 2rem;
 }
 
+/* Dishes divide the band with hairlines rather than each sitting in its own box.
+   flex-basis keeps 1–4 in a row honest and wraps beyond that. */
 .menu-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #fff;
+  flex: 1 1 15rem;
+  min-width: 0;
+  max-width: 24rem;
+  padding-right: 1.4rem;
+  margin-right: 1.4rem;
+  border-right: 1px solid var(--line-2);
 }
 
-.menu-card--unavailable {
-  opacity: 0.6;
+.menu-card:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
 }
 
-.menu-card__image {
-  width: 100%;
-  aspect-ratio: 4 / 3; /* reserves space before the image loads, so cards don't jump */
-  object-fit: cover;
+.menu-card__image,
+.menu-card__image--empty {
   display: block;
+  width: 100%;
+  max-height: 12rem;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  object-fit: cover;
 }
 
 .menu-card__image--empty {
-  background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 8px, #ececec 8px, #ececec 16px);
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--field-border);
+}
+
+.menu-card__image--empty::after {
+  content: 'no photo yet';
+  color: var(--faint);
+  font-size: 0.76rem;
+  font-style: italic;
 }
 
 .menu-card__body {
-  padding: 0.75rem;
+  padding-top: 0.7rem;
 }
 
 .menu-card__body h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
 }
 
-/* A button that looks like the heading it replaces: the affordance is the pointer and
-   the underline on hover, not a box around the title. */
+/* A button that looks like the heading it replaces: the affordance is the pointer and the
+   underline on hover, not a box around the title. */
 .menu-card__open {
-  font: inherit;
+  margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: none;
   color: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.menu-card__open:hover,
+.menu-card__open:hover:not(:disabled),
 .menu-card__open:focus-visible {
+  background: none;
+  color: inherit;
+  filter: none;
   text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.menu-card__description {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.menu-card__price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.65rem 0 0;
+}
+
+.menu-card__price strong {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.menu-card__price s {
+  color: var(--faint);
+  font-size: 0.9rem;
+}
+
+/* Off the menu = the unlit end of the street. */
+.menu-card--unavailable .menu-card__image {
+  filter: grayscale(0.9) brightness(0.5);
+}
+
+:root[data-theme='light'] .menu-card--unavailable .menu-card__image {
+  /* Darkening a photo on a white page reads as a broken image; fading it reads as gone. */
+  filter: grayscale(0.9) opacity(0.45);
+}
+
+.menu-card--unavailable .menu-card__body h3,
+.menu-card--unavailable .menu-card__price strong {
+  color: var(--faint);
 }
 
 .menu-card__details {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.15rem 0.5rem;
-  margin: 0.5rem 0 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid #eee;
-  font-size: 0.85rem;
+  gap: 0.15rem 0.75rem;
+  margin: 0.6rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line-2);
+  font-size: 0.84rem;
 }
 
 .menu-card__details dt {
-  color: #666;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .menu-card__details dd {
   margin: 0;
 }
 
-.menu-card__description {
-  margin: 0 0 0.5rem;
-  color: #555;
-  font-size: 0.875rem;
-}
-
-.menu-card__price {
-  margin: 0;
-}
-
-.menu-card__price s {
-  color: #888;
-}
-
-.menu-badge {
-  display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.menu-badge--special {
-  background: #0a6b3d;
-  color: #fff;
-}
-
-.menu-badge--unavailable {
-  background: #eee;
-  color: #555;
-  margin-top: 0.5rem;
-}
-
 .menu-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.3rem;
   margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #eee;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line-2);
 }
 
-.menu-card__actions button {
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.editor {
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  background: #fff;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.editor__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.editor__header h2 {
+.menu-status {
+  padding: 0.75rem var(--gutter) 0;
   margin: 0;
-  font-size: 1.1rem;
-}
-
-.editor__section {
-  border-top: 1px solid #eee;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  /* Single column keeps labels above inputs, which stays readable at any width. */
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  max-width: 32rem;
-}
-
-.editor__section h3 {
-  margin: 0 0 0.25rem;
-  font-size: 0.95rem;
-}
-
-.editor__section input,
-.editor__section select,
-.editor__section textarea {
-  font: inherit;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  width: 100%;
-  max-width: 22rem;
-}
-
-.editor__section button {
-  font: inherit;
-  margin-top: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid #888;
-  border-radius: 4px;
-  background: #f4f4f4;
-  cursor: pointer;
-}
-
-.editor__modes {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
-  margin: 0.5rem 0 0;
-}
-
-.editor__modes label {
-  display: block;
-}
-
-.editor__modes input {
-  width: auto;
-}
-
-.editor__hint {
-  margin: 0.25rem 0;
+  color: var(--muted);
   font-size: 0.85rem;
-  color: #666;
 }
 
-.editor__thumb {
-  width: 8rem;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+.menu-empty {
+  padding: 2rem var(--gutter);
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* ------------------------------------------------------------ responsive --- */
+
+@media (max-width: 900px) {
+  /* The lantern moves above its dishes rather than shrinking into a sliver. */
+  .course {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .course__name {
+    padding: 1.25rem var(--gutter) 0;
+  }
+
+  .menu-grid {
+    padding: 1rem var(--gutter) 1.4rem;
+  }
+
+  .menu-card {
+    flex-basis: 13rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Dishes stack one per row rather than being crushed side by side. */
+  .menu-card {
+    flex-basis: 100%;
+    max-width: none;
+    padding-right: 0;
+    margin-right: 0;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  .menu-card:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+  }
 }

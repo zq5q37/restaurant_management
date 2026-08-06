@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from './api';
 import ShiftEditor from './ShiftEditor';
+import PageHead from './PageHead';
+import { PAGE_JP } from './labels';
 import {
   addDays,
   formatDay,
@@ -165,69 +167,76 @@ function Schedule({ token, user, onUnauthorized }) {
 
   return (
     <div className="schedule">
+      <PageHead
+        kicker={PAGE_JP.schedule}
+        title="The week"
+        sub={
+          week?.scope === 'own'
+            ? 'The shifts you are on. Times are the hours the kitchen expects you.'
+            : 'Who is on, and where the gaps are. Generated from the weekly templates.'
+        }
+        sideValue={loading && !week ? '—' : totalShifts}
+        sideLabel={totalShifts === 1 ? 'shift' : 'shifts'}
+      />
+
       <div className="schedule-toolbar">
         <div className="schedule-week-nav">
-          <button type="button" onClick={() => goToWeek(addDays(monday, -7))}>
+          <button className="button--ghost" type="button" onClick={() => goToWeek(addDays(monday, -7))}>
             ← Previous
           </button>
           <strong className="schedule-week-label">{formatWeekRange(monday)}</strong>
-          <button type="button" onClick={() => goToWeek(addDays(monday, 7))}>
+          <button className="button--ghost" type="button" onClick={() => goToWeek(addDays(monday, 7))}>
             Next →
           </button>
-          <button type="button" onClick={goToToday} disabled={isCurrentWeek && selectedDate === today}>
+          <button className="button--ghost" type="button" onClick={goToToday} disabled={isCurrentWeek && selectedDate === today}>
             Today
           </button>
         </div>
 
-        <div className="schedule-views" role="group" aria-label="View">
-          <button
-            type="button"
-            onClick={() => setView('week')}
-            aria-pressed={view === 'week'}
-            disabled={view === 'week'}
-          >
+        <div className="segmented" role="group" aria-label="View">
+          <button type="button" onClick={() => setView('week')} aria-pressed={view === 'week'}>
             Week
           </button>
-          <button
-            type="button"
-            onClick={() => setView('day')}
-            aria-pressed={view === 'day'}
-            disabled={view === 'day'}
-          >
+          <button type="button" onClick={() => setView('day')} aria-pressed={view === 'day'}>
             Day
           </button>
         </div>
 
         {canManage && (
           <div className="schedule-actions">
-            <button type="button" onClick={() => setEditing('new')}>
-              + New shift
-            </button>
-            <button type="button" onClick={generateWeek} disabled={busy}>
+            <button type="button" className="button--ghost" onClick={generateWeek} disabled={busy}>
               Generate from templates
             </button>
-            <button type="button" onClick={publishWeek} disabled={busy || totalShifts === 0}>
+            <button
+              type="button"
+              className="button--ghost"
+              onClick={publishWeek}
+              disabled={busy || totalShifts === 0}
+            >
               Publish week
+            </button>
+            <button type="button" onClick={() => setEditing('new')}>
+              + New shift
             </button>
           </div>
         )}
       </div>
 
-      <p className="schedule-status" role="status">
-        {loading
-          ? 'Loading...'
-          : `${totalShifts} shift${totalShifts === 1 ? '' : 's'} this week` +
-            (week?.scope === 'own' ? ' — showing only shifts you are assigned to' : '')}
-      </p>
+      {/* The count lives in the header band; this line only carries what the header cannot. */}
+      {(loading || week?.scope === 'own') && (
+        <p className="schedule-status" role="status">
+          {loading ? 'Loading...' : 'Showing only shifts you are assigned to.'}
+        </p>
+      )}
 
       {error && (
-        <p role="alert" className="schedule-error">
+        <p role="alert" className="form-error schedule-error">
           {error}
         </p>
       )}
 
       {notice && (
-        <p role="status" className="schedule-notice">
+        <p role="status" className="notice schedule-notice">
           {notice}
         </p>
       )}
@@ -236,19 +245,21 @@ function Schedule({ token, user, onUnauthorized }) {
       {canManage && coverage?.total_shifts > 0 && <CoverageSummary coverage={coverage} />}
 
       {canManage && editing && (
-        <ShiftEditor
-          // Keyed by shift so switching which one is open resets the form, while a refresh of
-          // the same shift keeps what has been typed.
-          key={editing === 'new' ? 'new' : editing.id}
-          token={token}
-          shift={editing === 'new' ? null : editing}
-          staff={staff}
-          defaultDate={selectedDate}
-          onClose={() => setEditing(null)}
-          onSaved={handleSaved}
-          onDeleted={handleDeleted}
-          onUnauthorized={onUnauthorized}
-        />
+        <div className="schedule-panel">
+          <ShiftEditor
+            // Keyed by shift so switching which one is open resets the form, while a refresh of
+            // the same shift keeps what has been typed.
+            key={editing === 'new' ? 'new' : editing.id}
+            token={token}
+            shift={editing === 'new' ? null : editing}
+            staff={staff}
+            defaultDate={selectedDate}
+            onClose={() => setEditing(null)}
+            onSaved={handleSaved}
+            onDeleted={handleDeleted}
+            onUnauthorized={onUnauthorized}
+          />
+        </div>
       )}
 
       {!error && week && (
@@ -383,6 +394,7 @@ function DayDetail({ day, date, canManage, editing, onEdit }) {
                 <div className="schedule-detail__actions">
                   <button
                     type="button"
+                    className="button--ghost"
                     onClick={() => onEdit(shift)}
                     disabled={editing !== 'new' && editing?.id === shift.id}
                   >

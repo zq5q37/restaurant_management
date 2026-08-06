@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 // Seeded by backend/db/seed.js. Rendered only under `import.meta.env.DEV`, so Vite strips
 // this block from a production build — these accounts must never be shown on a real site.
@@ -43,65 +44,79 @@ function Login({ onSuccess }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Log in</h1>
-
-      <div>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="username"
-          required
-        />
+    <main className="app-main signin">
+      <div className="signin__toggle">
+        <ThemeToggle />
       </div>
 
-      <div>
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
+      <div className="page--narrow">
+        {/*
+          The full lockup rather than the enso crop: this is the one screen with room for the
+          whole sign, and it is what tells a visitor which shop they have arrived at.
+        */}
+        <img className="signin-logo" src="/logo-lockup.webp" alt="Rokushichi — Japanese cuisine" />
+
+        <form onSubmit={handleSubmit} className="signin__form">
+          <h1 className="signin__title">Sign in</h1>
+          <p className="hint">Staff and guests use the same door.</p>
+
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
+            required
+          />
+
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+
+          <button type="submit" className="signin__submit" disabled={submitting}>
+            {submitting ? 'Signing in...' : 'Sign in'}
+          </button>
+
+          {error && (
+            <p role="alert" className="form-error">
+              {error}
+            </p>
+          )}
+        </form>
+
+        {import.meta.env.DEV && (
+          <div className="signin__seed">
+            <p className="hint">
+              Dev seed accounts &mdash; password for all: <code>{SEED_PASSWORD}</code>
+            </p>
+            <ul className="chip-row">
+              {SEED_ACCOUNTS.map((seedEmail) => (
+                <li key={seedEmail}>
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={() => {
+                      setEmail(seedEmail);
+                      setPassword(SEED_PASSWORD);
+                      setError('');
+                    }}
+                  >
+                    {seedEmail.split('@')[0]}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
-
-      <button type="submit" disabled={submitting}>
-        {submitting ? 'Logging in...' : 'Log in'}
-      </button>
-
-      {error && <p role="alert">{error}</p>}
-
-      {import.meta.env.DEV && (
-        <div>
-          <hr />
-          <p>
-            Dev seed accounts &mdash; password for all: <code>{SEED_PASSWORD}</code>
-          </p>
-          <ul>
-            {SEED_ACCOUNTS.map((seedEmail) => (
-              <li key={seedEmail}>
-                <code>{seedEmail}</code>{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail(seedEmail);
-                    setPassword(SEED_PASSWORD);
-                    setError('');
-                  }}
-                >
-                  fill
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </form>
+    </main>
   );
 }
 

@@ -87,6 +87,13 @@ app.get('/api/message', (req, res) => {
   - `Analytics.jsx` + reusable SVG charts (`charts.jsx`): line, ranked bars, stacked columns, meters, stat tiles — no charting library
   - export: CSV from the API (RFC 4180, CRLF), PDF via a print stylesheet + the browser's print-to-PDF
   - seeded 30 days of view history (deterministic) so a fresh DB isn't an empty dashboard; activity log left unseeded on purpose
+- Frontend redesign: ported the Rokushichi design system from `restaurant_management_v1` (brand + `huashu-design` skill)
+  - two themes from one token set — dark "Lantern Alley", light "Cat Cafe", both sampled from photographs; every rule uses a token, a literal hex is a bug in whichever theme you aren't looking at
+  - shell: amber brand plate with the enso mark, nav underline, page-head band per screen with a Japanese kicker, footer
+  - menu became course bands with the lantern motif (which inverts to a painted signboard in the light theme for free)
+  - shifts read as lit lanterns; understaffed carries a red edge rule + count badge + word, never colour alone
+  - theme toggle with a sun/moon mask morph and a View Transitions circular wipe — no animation library
+  - charts moved onto tokens, so both themes come from one set of rules
 
 **Blockers:** -
 
@@ -96,6 +103,8 @@ app.get('/api/message', (req, res) => {
 - a leftover Docker port-forward held `localhost:5173` on IPv6 => host dev server only reachable on `127.0.0.1:5173`; `docker compose down` before running Vite outside Docker
 - analytics tab switch crashed: the previous tab's payload was still in state while the next request was in flight, so `Popular` rendered against the overview's shape => tag the payload with the tab it came from and only render on a match
 - an SVG at `width:100%` scales its whole coordinate system, so a 640-wide chart on a full-width page rendered 400px tall with 24px axis text => grid the cards to ~34rem columns so charts render near their natural size
+- the chart pair inherited from v1 (ochre + sign red) FAILED the palette validator in the light theme — normal-vision ΔE 14.5 against a floor of 15, i.e. hard to tell apart even with full colour vision => swapped the second series to the street-lamp blue the token set already had, giving ΔE 18.0 light / 19.0 dark. Warm lantern vs cold lamp is also the right metaphor for "filled" vs "still needed"
+- two validator flags kept deliberately and documented in `index.css` rather than silenced: the lantern amber sits above the dark-mode lightness band (it is the light source in the photograph), and the lamp sits below the chroma floor (what it encodes *is* absence)
 
 ## Day 5: 2026-08-07
 

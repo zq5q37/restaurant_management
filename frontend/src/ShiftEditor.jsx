@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { apiFetch } from './api';
 import { timeOf } from './dates';
-import './menu.css'; // the shared .editor__* panel styles live there
 
 // Mirrors SHIFT_ROLES in backend/schedule/store.js — anything else is a 400 from the API.
 const SHIFT_ROLES = ['server', 'host', 'cleaner', 'cook'];
@@ -106,21 +105,21 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
   const available = staff.filter((u) => !assignedIds.has(u.id));
 
   return (
-    <div className="editor">
-      <div className="editor__header">
+    <div className="panel">
+      <div className="panel__head">
         <h2>{isNew ? 'New shift' : `Edit ${shift.role} shift — ${shift.shift_date}`}</h2>
-        <button type="button" onClick={onClose}>
+        <button type="button" onClick={onClose} className="button--ghost">
           Close
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="schedule-error">
+        <p role="alert" className="form-error">
           {error}
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="editor__section">
+      <form onSubmit={handleSubmit} className="panel__section">
         <h3>Details</h3>
 
         <label htmlFor="sh-date">Date</label>
@@ -151,7 +150,7 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
         />
         {/* Not a mistake to correct: it is how a closing shift is expressed. */}
         {endTime <= startTime && (
-          <p className="editor__hint">Ends the next day — an overnight shift.</p>
+          <p className="hint">Ends the next day — an overnight shift.</p>
         )}
 
         <label htmlFor="sh-role">Role</label>
@@ -182,19 +181,19 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
       </form>
 
       {!isNew && (
-        <div className="editor__section">
+        <div className="panel__section">
           <h3>
             Assigned staff ({assigned.length}/{shift.required_staff})
           </h3>
 
           {assigned.length === 0 ? (
-            <p className="editor__hint">Nobody assigned yet.</p>
+            <p className="hint">Nobody assigned yet.</p>
           ) : (
-            <ul className="schedule-assignees">
+            <ul className="roster">
               {assigned.map((a) => (
                 <li key={a.user_id}>
                   <span>{a.full_name}</span>
-                  <button type="button" onClick={() => unassign(a.user_id)} disabled={busy}>
+                  <button type="button" onClick={() => unassign(a.user_id)} disabled={busy} className="button--ghost">
                     Remove
                   </button>
                 </li>
@@ -223,31 +222,31 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
             Assign
           </button>
 
-          <p className="editor__hint">
+          <p className="hint">
             Someone already working an overlapping shift is refused, with the clash named.
           </p>
         </div>
       )}
 
       {!isNew && (
-        <div className="editor__section">
+        <div className="panel__section">
           <h3>Danger zone</h3>
           {/* Two-step delete rather than window.confirm: a native dialog blocks the page thread. */}
           {confirmingDelete ? (
             <div>
-              <button type="button" onClick={handleDelete} disabled={busy}>
+              <button type="button" onClick={handleDelete} disabled={busy} className="button--danger-text">
                 Confirm delete
               </button>{' '}
-              <button type="button" onClick={() => setConfirmingDelete(false)}>
+              <button type="button" onClick={() => setConfirmingDelete(false)} className="button--ghost">
                 Cancel
               </button>
             </div>
           ) : (
-            <button type="button" onClick={() => setConfirmingDelete(true)}>
+            <button type="button" onClick={() => setConfirmingDelete(true)} className="button--danger-text">
               Delete shift
             </button>
           )}
-          <p className="editor__hint">Everyone assigned is notified that it was cancelled.</p>
+          <p className="hint">Everyone assigned is notified that it was cancelled.</p>
         </div>
       )}
     </div>

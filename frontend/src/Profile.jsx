@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import PageHead from './PageHead';
+import { PAGE_JP } from './labels';
 
 function Profile({ token, user, onUpdated, onUnauthorized }) {
   const [fullName, setFullName] = useState(user.full_name);
@@ -52,42 +54,66 @@ function Profile({ token, user, onUpdated, onUnauthorized }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="full_name">Name</label>
-        <input
-          id="full_name"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-        />
+    <div className="profile">
+      <PageHead
+        kicker={PAGE_JP.profile}
+        title="Your details"
+        sub="Your name and email. Your role is set for you by an admin."
+      />
+
+      <div className="page--padded">
+        <div className="panel" style={{ maxWidth: '32rem' }}>
+          <form onSubmit={handleSubmit} className="panel__section" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}>
+            <h2>Account</h2>
+
+            <label htmlFor="full_name">Name</label>
+            <input
+              id="full_name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
+
+            <label htmlFor="profile_email">Email</label>
+            <input
+              id="profile_email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              required
+            />
+
+            <p className="hint">
+              Signed in as <strong>{user.role}</strong> &mdash; only an admin can change this.
+            </p>
+
+            <div className="panel__actions">
+              <button type="submit" disabled={saving || !dirty}>
+                {saving ? 'Saving...' : 'Save changes'}
+              </button>
+              <button
+                type="button"
+                className="button--ghost"
+                onClick={handleReset}
+                disabled={saving || !dirty}
+              >
+                Reset
+              </button>
+            </div>
+
+            {status && (
+              <p
+                role={status.type === 'error' ? 'alert' : 'status'}
+                className={status.type === 'error' ? 'form-error' : 'notice'}
+              >
+                {status.text}
+              </p>
+            )}
+          </form>
+        </div>
       </div>
-
-      <div>
-        <label htmlFor="profile_email">Email</label>
-        <input
-          id="profile_email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="username"
-          required
-        />
-      </div>
-
-      <p>
-        Role: <strong>{user.role}</strong> &mdash; only an admin can change this.
-      </p>
-
-      <button type="submit" disabled={saving || !dirty}>
-        {saving ? 'Saving...' : 'Save changes'}
-      </button>{' '}
-      <button type="button" onClick={handleReset} disabled={saving || !dirty}>
-        Reset
-      </button>
-
-      {status && <p role={status.type === 'error' ? 'alert' : 'status'}>{status.text}</p>}
-    </form>
+    </div>
   );
 }
 
