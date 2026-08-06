@@ -229,11 +229,82 @@ Rows are written on assignment, unassignment, shift edits, shift deletion, and
 `POST /api/schedule/publish`. No email or push is sent — recipients read them from
 `GET /api/notifications`, which also returns an `unread` count.
 
+## Analytics
+
+All require `Authorization: Bearer <token>`. The dashboard and exports are manager+; the system
+report is admin-only, matching the Analytics section of [permission-matrix.md](permission-matrix.md).
+
+| Endpoint                          | Customer | Staff | Manager | Admin | Matrix row                        |
+| --------------------------------- | :------: | :---: | :-----: | :---: | --------------------------------- |
+| `GET /api/analytics/overview`     |   403    |  403  |    ✓    |   ✓   | View dashboard                    |
+| `GET /api/analytics/popular-items`|   403    |  403  |    ✓    |   ✓   | View dashboard                    |
+| `GET /api/analytics/schedule`     |   403    |  403  |    ✓    |   ✓   | View dashboard                    |
+| `GET /api/analytics/menu`         |   403    |  403  |    ✓    |   ✓   | View dashboard                    |
+| `GET /api/analytics/system`       |   403    |  403  |   403   |   ✓   | View user activity / system usage |
+
+### Date range
+
+Every endpoint takes `?from=&to=` as inclusive `YYYY-MM-DD` dates, defaulting to the **last 30 days**
+ending today. `to` is resolved to the start of the following day internally, so an event at 23:59 on
+the last day is included.
+
+| Status | When                                                          |
+| ------ | ------------------------------------------------------------- |
+| 400    | `from` or `to` is not a valid date                             |
+| 400    | `from` is after `to`                                           |
+| 400    | The range exceeds 366 days                                     |
+
+The span limit is not caution for its own sake: each report scans the event tables across the range,
+and an unbounded range from a mistyped year would scan everything.
+
+### What each report answers
+
+- **`overview`** — headline figures in one request: total views with a daily series, menu margin and
+  theoretical profit, and shift coverage.
+- **`popular-items`** — `items` (ranked by views, with `unique_viewers`), `by_category`, `by_day`.
+  Items with **zero** views are included: "nobody looked at this all month" is the finding that
+  disappears under an inner join. `?limit=` defaults to 10, capped at 100.
+- **`schedule`** — `summary` and `by_day` coverage, `by_role` gaps, and `utilisation` (rostered hours
+  per person plus their share of the total). Hours come from the absolute timestamps, so an overnight
+  22:00–02:00 shift counts as the four hours it is.
+- **`menu`** — per item: list price, effective price, cost, margin, views, and **theoretical profit**.
+- **`system`** *(admin)* — request volume, average/p95/max response time, error rate, busiest
+  endpoints, and per-user activity with last-seen.
+
+### Theoretical profit
+
+There is no ordering system in this app, so profit is explicitly *theoretical*: `margin × views in
+range` — what would be earned if every view converted exactly once. It ranks items by commercial
+value rather than raw popularity, since a heavily viewed item on a thin margin can be worth less than
+a quiet one on a fat one. An item with no `cost_cents` returns `null` rather than a made-up figure,
+and the dashboard counts those separately as "missing a cost".
+
+### Popularity is measured by views
+
+`POST /api/menu-items/:id/view` records an explicit view (204); `GET /api/menu-items/:id` records one
+as a side effect. The list endpoint does not — appearing in a grid of everything is not a view.
+
+### CSV export
+
+Add `&format=csv` to `popular-items`, `schedule`, `menu` or `system`. The response is
+`text/csv; charset=utf-8` with a `Content-Disposition` filename carrying the range, e.g.
+`menu_profitability_2026-07-08_to_2026-08-06.csv`. Money is written as a plain decimal with no
+currency symbol so a spreadsheet can sum the column, and an unknown cost is an empty cell rather
+than `0.00`. Fields containing a comma, quote or newline are quoted per RFC 4180, with CRLF line
+endings — Excel on Windows reads a bare-LF file as one long row.
+
+**PDF export is the browser's own print-to-PDF**, driven by a print stylesheet that drops the app
+chrome and keeps cards from splitting across pages. No PDF library is bundled; if a server-rendered
+PDF is ever needed, that is a separate dependency decision.
+
 ## Middleware
 
 From `backend/middleware/auth.js`:
 
 - `requireAuth` — validates the bearer token and sets `req.user`.
+- `logActivity` (`middleware/activity.js`) — mounted on `/api`, writes one `activity_log` row per
+  request on the response's `finish` event, so the insert happens after the last byte is sent and
+  cannot slow the request down. Skips `/api/health` and `/api/images`.
 - `requireRole(...roles)` — use after `requireAuth`, e.g. `requireRole('manager', 'admin')`.
   Responds 403 when the role does not match. Maps directly onto
   [permission-matrix.md](permission-matrix.md).

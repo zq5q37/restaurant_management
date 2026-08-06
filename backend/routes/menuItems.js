@@ -16,6 +16,19 @@ const canSeeUnavailable = (user) => user.role !== 'customer';
 
 const findRow = (id) => db.prepare('SELECT * FROM menu_items WHERE id = ?').get(id);
 
+const insertView = db.prepare(
+  'INSERT INTO menu_item_views (menu_item_id, user_id) VALUES (?, ?)'
+);
+
+/** Analytics must never break browsing, so a failed view write is logged and dropped. */
+function recordView(itemId, userId) {
+  try {
+    insertView.run(itemId, userId);
+  } catch (err) {
+    console.error('view log write failed:', err.message);
+  }
+}
+
 function respondWithItem(res, id, status = 200) {
   return res.status(status).json({ item: decorate(findRow(id)) });
 }
@@ -23,11 +36,19 @@ function respondWithItem(res, id, status = 200) {
 const isPositiveInt = (v) => Number.isInteger(v) && v >= 0;
 
 /** Shared validation for the money fields, used by both create and the pricing route. */
-function validatePricing({ price_cents, special_price_cents, discount_percent }, { required }) {
+function validatePricing(
+  { price_cents, cost_cents, special_price_cents, discount_percent },
+  { required }
+) {
   if (required || price_cents !== undefined) {
     if (!isPositiveInt(price_cents)) {
       return 'price_cents must be a non-negative integer (cents, not dollars)';
     }
+  }
+  // Null is meaningful — it clears the cost, which takes the item out of margin reporting
+  // rather than reporting it as pure profit.
+  if (cost_cents != null && !isPositiveInt(cost_cents)) {
+    return 'cost_cents must be a non-negative integer or null';
   }
   if (special_price_cents != null && !isPositiveInt(special_price_cents)) {
     return 'special_price_cents must be a non-negative integer or null';
@@ -116,13 +137,34 @@ router.get('/:id', (req, res) => {
     return res.status(404).json({ error: 'Menu item not found' });
   }
 
+  // Fetching one item is someone looking at it, which is what "popular" measures. Recorded
+  // here rather than in the list endpoint: appearing in a grid of 100 is not a view.
+  recordView(item.id, req.user.id);
+
   res.json({ item: decorate(item) });
+});
+
+/**
+ * POST /api/menu-items/:id/view
+ *
+ * An explicit ping for clients that already hold the item and would otherwise refetch it
+ * only to register interest. Returns 204 — the caller has nothing to do with a response.
+ */
+router.post('/:id/view', (req, res) => {
+  const item = findRow(req.params.id);
+  if (!item) return res.status(404).json({ error: 'Menu item not found' });
+  if (!item.is_available && !canSeeUnavailable(req.user)) {
+    return res.status(404).json({ error: 'Menu item not found' });
+  }
+
+  recordView(item.id, req.user.id);
+  res.status(204).end();
 });
 
 /* -------------------------------------------------------------- write ---- */
 
 router.post('/', MANAGER_PLUS, (req, res) => {
-  const { category_id, name, description, price_cents, is_available } = req.body || {};
+  const { category_id, name, description, price_cents, cost_cents, is_available } = req.body || {};
 
   if (!Number.isInteger(category_id)) {
     return res.status(400).json({ error: 'category_id is required' });
@@ -145,10 +187,17 @@ router.post('/', MANAGER_PLUS, (req, res) => {
 
   const info = db
     .prepare(`
-      INSERT INTO menu_items (category_id, name, description, price_cents, is_available)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO menu_items (category_id, name, description, price_cents, cost_cents, is_available)
+      VALUES (?, ?, ?, ?, ?, ?)
     `)
-    .run(category_id, name.trim(), description ?? null, price_cents, is_available === false ? 0 : 1);
+    .run(
+      category_id,
+      name.trim(),
+      description ?? null,
+      price_cents,
+      cost_cents ?? null,
+      is_available === false ? 0 : 1
+    );
 
   respondWithItem(res, info.lastInsertRowid, 201);
 });
@@ -232,6 +281,7 @@ router.patch('/:id/pricing', MANAGER_PLUS, (req, res) => {
   const body = req.body || {};
   const FIELDS = [
     'price_cents',
+    'cost_cents',
     'special_price_cents',
     'discount_percent',
     'special_starts_at',

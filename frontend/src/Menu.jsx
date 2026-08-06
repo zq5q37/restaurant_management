@@ -28,6 +28,7 @@ function Menu({ token, user, onUnauthorized }) {
   // list query after any mutation so the grid never drifts from the server.
   const [editing, setEditing] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [openId, setOpenId] = useState(null);
 
   // Customers only ever receive available items, so the filter would be a no-op for them.
   const canFilterAvailability = user.role !== 'customer';
@@ -126,11 +127,25 @@ function Menu({ token, user, onUnauthorized }) {
     setSort('');
   }
 
+  /**
+   * Opening a dish fetches it by id. That request is what records the view behind the
+   * "popular items" report — the list endpoint deliberately does not count, because
+   * appearing in a grid of everything is not the same as someone looking at you.
+   */
+  function openItem(item) {
+    setOpenId((current) => (current === item.id ? null : item.id));
+    apiFetch(`/api/menu-items/${item.id}`, { token }).catch(() => {
+      /* The card already has everything it displays; a failed ping is not worth an alert. */
+    });
+  }
+
   const gridProps = {
     canManage,
     onEdit: setEditing,
     onToggle: toggleAvailability,
     onDelete: deleteItem,
+    onOpen: openItem,
+    openId,
   };
 
   return (
@@ -215,7 +230,7 @@ function Menu({ token, user, onUnauthorized }) {
   );
 }
 
-function ItemGrid({ items, canManage, onEdit, onToggle, onDelete }) {
+function ItemGrid({ items, canManage, onEdit, onToggle, onDelete, onOpen, openId }) {
   return (
     <ul className="menu-grid">
       {items.map((item) => (
@@ -226,13 +241,15 @@ function ItemGrid({ items, canManage, onEdit, onToggle, onDelete }) {
           onEdit={onEdit}
           onToggle={onToggle}
           onDelete={onDelete}
+          onOpen={onOpen}
+          isOpen={openId === item.id}
         />
       ))}
     </ul>
   );
 }
 
-function MenuCard({ item, canManage, onEdit, onToggle, onDelete }) {
+function MenuCard({ item, canManage, onEdit, onToggle, onDelete, onOpen, isOpen }) {
   // Two-step delete instead of window.confirm: a native dialog blocks the page thread.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -250,7 +267,13 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete }) {
       )}
 
       <div className="menu-card__body">
-        <h3>{item.name}</h3>
+        {/* Opening a dish is what "popular" counts, so the title is the thing you click. */}
+        <h3>
+          <button type="button" className="menu-card__open" onClick={() => onOpen(item)} aria-expanded={isOpen}>
+            {item.name}
+          </button>
+        </h3>
+
         {item.description && <p className="menu-card__description">{item.description}</p>}
 
         <p className="menu-card__price">
@@ -267,6 +290,18 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete }) {
 
         {!item.is_available && (
           <span className="menu-badge menu-badge--unavailable">Unavailable</span>
+        )}
+
+        {isOpen && (
+          <dl className="menu-card__details">
+            <dt>Category</dt>
+            <dd>{item.category_name}</dd>
+            <dt>Price</dt>
+            <dd>
+              {formatPrice(item.effective_price_cents)}
+              {item.is_on_special && ` (was ${formatPrice(item.price_cents)})`}
+            </dd>
+          </dl>
         )}
 
         {canManage && (

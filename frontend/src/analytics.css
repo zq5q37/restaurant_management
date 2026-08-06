@@ -1,0 +1,138 @@
+/* One filter row above everything it scopes — never a filter inside a chart card. */
+.analytics-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.analytics-presets,
+.analytics-custom,
+.analytics-exports {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.analytics-exports {
+  margin-left: auto;
+}
+
+.analytics-custom label {
+  font-size: 0.85rem;
+  color: #52514e;
+}
+
+.analytics-filters button,
+.analytics-filters input,
+.analytics-tabs button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.analytics-filters input {
+  cursor: text;
+}
+
+.analytics-presets button[aria-pressed='true'] {
+  background: #333;
+  border-color: #333;
+  color: #fff;
+}
+
+.analytics-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.analytics-tabs button[aria-selected='true'] {
+  background: #333;
+  border-color: #333;
+  color: #fff;
+}
+
+.analytics-range {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.analytics-error {
+  color: #b00020;
+}
+
+/*
+ * Two cards abreast on a wide screen, one on a narrow one.
+ *
+ * This is also what keeps the charts a sensible size: an SVG with width:100% scales its
+ * whole coordinate system, so a 640-wide chart stretched across a 1400px page would render
+ * 400px tall with 24px axis text. Capping the column near the chart's natural width keeps
+ * every mark and label at the size it was designed at.
+ */
+.analytics-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr));
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Tiles and wide tables read across the full width rather than sharing a row. */
+.analytics-body > .stat-grid,
+.analytics-body > .chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+/* Hold the previous render while refetching rather than flashing a skeleton: the charts
+   keep their place, so changing the range doesn't make the page jump. */
+.analytics-body.is-loading {
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+}
+
+.analytics-footnote {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #898781;
+}
+
+/*
+ * "Save as PDF" is the browser's own print-to-PDF, so the print sheet is the PDF layout:
+ * drop the app chrome and the controls, and let the cards break cleanly across pages.
+ */
+@media print {
+  nav,
+  .analytics-filters,
+  .analytics-tabs,
+  .chart-card__actions {
+    display: none !important;
+  }
+
+  .analytics-body {
+    gap: 0.75rem;
+  }
+
+  .chart-card,
+  .stat-tile {
+    border-color: #999;
+    break-inside: avoid;
+  }
+
+  .analytics-body.is-loading {
+    opacity: 1;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}

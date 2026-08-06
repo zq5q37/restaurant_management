@@ -78,6 +78,15 @@ app.get('/api/message', (req, res) => {
 - Manager/admin controls (`ShiftEditor.jsx`): create / edit / delete shift, assign / unassign staff, generate week from templates, publish week
   - assignment picker hides customers, deactivated users, and anyone already on the shift — all three are 409s from the API
   - overlap conflict shown with the clashing shift named
+- Users tab (`Users.jsx`): manager sees a read-only list; admin gets role change, deactivate/reactivate, delete, create
+  - self-lockout guards mirrored client-side — own row's controls disabled, so an admin never fires a request that can only 409
+- Analytics dashboard, backend + frontend
+  - new tables `menu_item_views` and `activity_log`, new `menu_items.cost_cents`; `migrate()` gained an idempotent ADD COLUMN step since `CREATE TABLE IF NOT EXISTS` is a no-op on an existing table
+  - `GET /api/analytics/{overview,popular-items,schedule,menu,system}?from=&to=`, all aggregated in SQL; `system` is admin-only
+  - ranges compare raw timestamps, never `date(col) BETWEEN` — wrapping the column kills the index
+  - `Analytics.jsx` + reusable SVG charts (`charts.jsx`): line, ranked bars, stacked columns, meters, stat tiles — no charting library
+  - export: CSV from the API (RFC 4180, CRLF), PDF via a print stylesheet + the browser's print-to-PDF
+  - seeded 30 days of view history (deterministic) so a fresh DB isn't an empty dashboard; activity log left unseeded on purpose
 
 **Blockers:** -
 
@@ -85,6 +94,8 @@ app.get('/api/message', (req, res) => {
 - `schedule.js` helper collided with `Schedule.jsx` on the case-insensitive Windows FS — `import from './Schedule'` resolved to the helper => renamed to `dates.js`
 - `multer` was missing from `backend/package-lock.json` => `npm start` on the host crashed; `npm install` restored it. The Dockerfile runs `npm install`, not `npm ci`, so the image had been hiding it
 - a leftover Docker port-forward held `localhost:5173` on IPv6 => host dev server only reachable on `127.0.0.1:5173`; `docker compose down` before running Vite outside Docker
+- analytics tab switch crashed: the previous tab's payload was still in state while the next request was in flight, so `Popular` rendered against the overview's shape => tag the payload with the tab it came from and only render on a match
+- an SVG at `width:100%` scales its whole coordinate system, so a 640-wide chart on a full-width page rendered 400px tall with 24px axis text => grid the cards to ~34rem columns so charts render near their natural size
 
 ## Day 5: 2026-08-07
 

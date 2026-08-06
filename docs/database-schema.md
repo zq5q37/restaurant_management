@@ -72,6 +72,7 @@ Index: `idx_users_role` on `role`, for admin screens that filter by role.
 | `name`                      | TEXT    | NOT NULL, UNIQUE per category                      |                                          |
 | `description`               | TEXT    |                                                    |                                          |
 | `price_cents`               | INTEGER | NOT NULL, >= 0                                     | **Whole cents, never dollars**           |
+| `cost_cents`                | INTEGER | >= 0, nullable                                     | Ingredient cost; drives margin reporting |
 | `special_price_cents`       | INTEGER | >= 0, nullable                                     | Flat override                            |
 | `discount_percent`          | INTEGER | 1..99, nullable                                    | Percentage off                           |
 | `special_starts_at`         | TEXT    | nullable                                           | Optional window start                    |
@@ -93,6 +94,9 @@ Indexes on `category_id` and `is_available`.
   or silently delete them; the API returns 409 with a count instead.
 - **`UNIQUE (category_id, name)`** — duplicate names are fine across categories ("Water" as a
   beverage and a side), but not within one.
+- **`cost_cents` is nullable, and null is not zero.** An item nobody has costed is excluded from
+  margin reporting entirely; defaulting it to 0 would report it as 100% profit, which is worse
+  than reporting nothing.
 
 ### Effective price
 
@@ -148,6 +152,55 @@ schedule-change messages.
   early west of Greenwich, which would shift a whole generated week; the helpers append
   `'T00:00:00Z'` to pin it.
 
+## Analytics
+
+Two event tables feed the reporting dashboard. Both are append-only: rows are written as things
+happen and never updated, so every report is a query over history rather than a counter that has
+already thrown the detail away.
+
+### `menu_item_views`
+
+| Column         | Notes                                                                  |
+| -------------- | ---------------------------------------------------------------------- |
+| `menu_item_id` | FK → `menu_items`, ON DELETE CASCADE                                    |
+| `user_id`      | FK → `users`, **ON DELETE SET NULL** — the view still counts afterwards |
+| `viewed_at`    | `datetime('now')`                                                      |
+
+Written by `GET /api/menu-items/:id` and `POST /api/menu-items/:id/view`. The **list** endpoint
+deliberately does not count: appearing in a grid of everything is not the same as being looked at.
+
+Indexes: `idx_views_viewed_at` on `viewed_at`, and `idx_views_item` on `(menu_item_id, viewed_at)`.
+
+### `activity_log`
+
+| Column        | Notes                                                                  |
+| ------------- | ---------------------------------------------------------------------- |
+| `user_id`     | FK → `users`, ON DELETE SET NULL; null for unauthenticated requests     |
+| `method`      | GET / POST / ...                                                       |
+| `path`        | The **route pattern** (`/api/menu-items/:id`), not the raw URL          |
+| `status`      | HTTP status the response carried                                       |
+| `duration_ms` | Server-side handling time                                              |
+| `created_at`  | `datetime('now')`                                                      |
+
+Written by `backend/middleware/activity.js` on the response's `finish` event — after the last byte
+is sent, so the insert is off the response path. Health checks and image requests are skipped.
+
+Indexes: `idx_activity_created` on `created_at`, `idx_activity_user` on `(user_id, created_at)`.
+
+### Design decisions
+
+- **Raw events, not counters.** A `view_count` column on `menu_items` cannot answer "popular last
+  week", "popular with whom", or support any date range at all. Rows are cheap; lost detail is not
+  recoverable.
+- **Route pattern rather than raw URL.** Grouping by `/api/menu-items/7` and `/api/menu-items/8`
+  separately would scatter one endpoint across as many rows as there are items.
+- **Ranges are compared against raw timestamps** (`viewed_at >= @start AND viewed_at < @end`),
+  never `date(viewed_at) BETWEEN ...`. Wrapping the column in a function makes its index unusable,
+  turning every report into a full table scan. `to` is converted to the start of the next day, so
+  an event at 23:59 on the final day is still included.
+- **Telemetry never breaks the request.** Both writers swallow and log their errors: a failed
+  analytics insert must not turn a working page load into a 500.
+
 ## Image storage
 
 Uploaded images live in the `menu-images` named volume at `/app/uploads` (`UPLOAD_DIR`), so they
@@ -168,6 +221,12 @@ survive `docker compose down` exactly like the database. Only the filename is st
 
 All share the password `Passw0rd!23`, overridable via the `SEED_PASSWORD` environment variable.
 **Local development only — never seed these accounts into a deployed database.**
+
+The seed also writes **30 days of menu view history**, so the analytics dashboard has something to
+show on a fresh database instead of an empty grid. It is deterministic (no `Math.random`), runs only
+when `menu_item_views` is empty, and gives Friday and Saturday a heavier weighting so the trend line
+has a realistic weekly rhythm. The **activity log is deliberately not seeded** — inventing response
+times would make the system performance report lie; it fills up as soon as the app is used.
 
 Run it inside the container, since `better-sqlite3` is compiled for Linux in the image:
 

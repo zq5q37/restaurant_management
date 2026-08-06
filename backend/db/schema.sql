@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS menu_items (
   -- Money is stored in whole cents. A REAL column would make 0.1 + 0.2 != 0.3 a pricing bug.
   price_cents      INTEGER NOT NULL CHECK (price_cents >= 0),
 
+  -- What the ingredients cost. Nullable: an item whose cost nobody has entered yet is
+  -- excluded from margin reporting rather than being reported as 100% profit.
+  cost_cents       INTEGER CHECK (cost_cents IS NULL OR cost_cents >= 0),
+
   -- Dynamic pricing. Either a flat override OR a percentage off, never both.
   special_price_cents INTEGER CHECK (special_price_cents IS NULL OR special_price_cents >= 0),
   discount_percent    INTEGER CHECK (discount_percent IS NULL OR (discount_percent BETWEEN 1 AND 99)),
@@ -121,6 +125,40 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read    INTEGER NOT NULL DEFAULT 0 CHECK (is_read IN (0, 1)),
   created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+/* ----------------------------------------------------------------- analytics ----
+ * There is no ordering system in this app, so "popular items" is measured by views:
+ * one row per time someone opens an item. Kept as raw events rather than a counter on
+ * menu_items, because a counter cannot answer "popular last week" or "by whom".
+ */
+CREATE TABLE IF NOT EXISTS menu_item_views (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_item_id INTEGER NOT NULL REFERENCES menu_items (id) ON DELETE CASCADE,
+  -- Null once the viewer's account is deleted; the view itself still counts.
+  user_id      INTEGER REFERENCES users (id) ON DELETE SET NULL,
+  viewed_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Every analytics query filters on a date range first, so viewed_at leads the index.
+CREATE INDEX IF NOT EXISTS idx_views_viewed_at ON menu_item_views (viewed_at);
+CREATE INDEX IF NOT EXISTS idx_views_item      ON menu_item_views (menu_item_id, viewed_at);
+
+-- One row per API request, written after the response is sent. Feeds both halves of the
+-- system report: who is using the system (user_id) and how it performs (duration_ms, status).
+CREATE TABLE IF NOT EXISTS activity_log (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER REFERENCES users (id) ON DELETE SET NULL,
+  method      TEXT    NOT NULL,
+  -- The route pattern ('/api/menu-items/:id'), not the raw URL: '/api/menu-items/7' and
+  -- '/api/menu-items/8' are the same endpoint, and grouping by raw URL would hide that.
+  path        TEXT    NOT NULL,
+  status      INTEGER NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log (created_at);
+CREATE INDEX IF NOT EXISTS idx_activity_user    ON activity_log (user_id, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_shifts_date            ON shifts (shift_date);
 CREATE INDEX IF NOT EXISTS idx_shifts_starts          ON shifts (starts_at);

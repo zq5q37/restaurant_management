@@ -143,6 +143,7 @@ function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized 
 
 function PricingSection({ token, item, run }) {
   const [price, setPrice] = useState(centsToDollars(item.price_cents));
+  const [cost, setCost] = useState(centsToDollars(item.cost_cents));
   const [mode, setMode] = useState(
     item.special_price_cents != null ? 'special' : item.discount_percent != null ? 'discount' : 'none'
   );
@@ -157,6 +158,9 @@ function PricingSection({ token, item, run }) {
     // The API rejects setting both, so clearing the unused one is required, not optional.
     const body = {
       price_cents: dollarsToCents(price),
+      // Blank means "unknown", which keeps the item out of margin reporting. Sending 0
+      // instead would report it as pure profit.
+      cost_cents: cost.trim() === '' ? null : dollarsToCents(cost),
       special_price_cents: mode === 'special' ? dollarsToCents(specialPrice) : null,
       discount_percent: mode === 'discount' ? Number(discount) : null,
       special_starts_at: mode === 'none' ? null : startsAt || null,
@@ -172,6 +176,18 @@ function PricingSection({ token, item, run }) {
 
       <label htmlFor="pr-base">Base price ($)</label>
       <input id="pr-base" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+
+      <label htmlFor="pr-cost">Cost ($)</label>
+      <input
+        id="pr-cost"
+        inputMode="decimal"
+        value={cost}
+        onChange={(e) => setCost(e.target.value)}
+        placeholder="4.20"
+      />
+      <p className="editor__hint">
+        What the ingredients cost. Drives margin reporting in Analytics; leave blank if unknown.
+      </p>
 
       <fieldset className="editor__modes">
         <legend>Special</legend>

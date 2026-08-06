@@ -78,6 +78,41 @@
   font-size: 1rem;
 }
 
+/* A button that looks like the heading it replaces: the affordance is the pointer and
+   the underline on hover, not a box around the title. */
+.menu-card__open {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-card__open:hover,
+.menu-card__open:focus-visible {
+  text-decoration: underline;
+}
+
+.menu-card__details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.5rem;
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
+}
+
+.menu-card__details dt {
+  color: #666;
+}
+
+.menu-card__details dd {
+  margin: 0;
+}
+
 .menu-card__description {
   margin: 0 0 0.5rem;
   color: #555;

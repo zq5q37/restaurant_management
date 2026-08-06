@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const { UPLOAD_DIR } = require('./middleware/upload');
+const { logActivity } = require('./middleware/activity');
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Before the routes so it can time them, but it writes after the response is sent.
+app.use('/api', logActivity);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -18,6 +22,7 @@ app.use('/api/shifts', require('./routes/shifts'));
 app.use('/api/schedule', require('./routes/schedule'));
 app.use('/api/availability', require('./routes/availability'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // Uploaded images are served unauthenticated: filenames are random UUIDs, so they are not
 // enumerable, and requiring a bearer token would stop the browser from loading them in <img>.
