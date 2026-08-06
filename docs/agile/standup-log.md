@@ -94,6 +94,10 @@ app.get('/api/message', (req, res) => {
   - shifts read as lit lanterns; understaffed carries a red edge rule + count badge + word, never colour alone
   - theme toggle with a sun/moon mask morph and a View Transitions circular wipe — no animation library
   - charts moved onto tokens, so both themes come from one set of rules
+- Reseeded the menu from v1: four courses + nine dishes with real costs, and the curry udon special (26%, open-ended)
+  - v1 keeps specials in their own table; here the same special is expressed as `discount_percent` + window on the item
+  - the Japanese dish names now mean something, so `labels.js` captions dishes as well as courses
+  - retired the old generic starter menu with a one-off scoped delete rather than a permanent step in `seed.js` — a fresh database never had those rows
 
 **Blockers:** -
 

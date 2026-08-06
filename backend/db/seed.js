@@ -35,26 +35,60 @@ const created = seedAll(SEED_USERS);
 
 // --- Menu ------------------------------------------------------------------
 
+/**
+ * The four courses, carried over from restaurant_management_v1.
+ *
+ * These replaced a generic Appetizers/Mains/Desserts/Beverages set because the menu is home
+ * cooking, not a Western restaurant service — a board with two curries and a nabe has no
+ * dessert course to fill. The names are the join key for the Japanese lantern labels in the
+ * frontend's `labels.js`; rename one here and the lantern loses its kanji, which is a
+ * visible but harmless failure.
+ */
 const SEED_CATEGORIES = [
-  { name: 'Appetizers', description: 'Small plates to start', display_order: 1 },
-  { name: 'Mains', description: 'Main courses', display_order: 2 },
-  { name: 'Desserts', description: 'Something sweet', display_order: 3 },
-  { name: 'Beverages', description: 'Drinks, hot and cold', display_order: 4 },
+  { name: 'Small Plates', description: 'Little dishes to start, or to keep drinking over', display_order: 1 },
+  { name: 'Noodles & Rice', description: 'The bowls that make up most of what gets eaten here', display_order: 2 },
+  { name: 'From the Pot', description: 'Cooked at the table, shared', display_order: 3 },
+  { name: 'Air Fryer', description: 'Fried without the pan of oil', display_order: 4 },
 ];
 
-// price_cents / cost_cents, never dollars — see the note in schema.sql. Costs drive the
-// margin reporting; Soup of the Day deliberately has none, so the dashboard's "missing cost"
-// path is exercised by the seed rather than only in production.
+/**
+ * The menu, carried over from v1. price_cents / cost_cents, never dollars.
+ *
+ * `cost_cents` is the ingredient cost, which is what the margin and theoretical-profit
+ * reports divide by — it is the reason the column exists. The numbers are honest estimates
+ * for home portions: rice and vegetable dishes carry high margins, the sukiyaki beef does
+ * not, which is exactly the shape the margin report is meant to reveal.
+ *
+ * Sesame Sauce Salad deliberately keeps no cost, so the dashboard's "missing a cost" path is
+ * exercised by the seed rather than only in production. For the same reason the potato wedges
+ * ship off the menu — the greyed-out state on the menu board needs something to grey out.
+ */
 const SEED_ITEMS = [
-  ['Appetizers', 'Garlic Bread', 'Toasted sourdough with garlic butter', 650, 180, 1],
-  ['Appetizers', 'Soup of the Day', 'Ask your server', 780, null, 1],
-  ['Mains', 'Margherita Pizza', 'Tomato, mozzarella, basil', 1450, 420, 1],
-  ['Mains', 'Grilled Salmon', 'With seasonal vegetables', 2200, 1150, 1],
-  ['Mains', 'Mushroom Risotto', 'Arborio rice, wild mushrooms', 1680, 540, 0],
-  ['Desserts', 'Tiramisu', 'Espresso-soaked ladyfingers', 890, 260, 1],
-  ['Desserts', 'Lemon Tart', 'With raspberry coulis', 820, 240, 1],
-  ['Beverages', 'Espresso', 'Single shot', 320, 45, 1],
-  ['Beverages', 'Fresh Orange Juice', 'Squeezed to order', 480, 170, 1],
+  ['Small Plates', 'Sesame Sauce Salad',
+    'Blanched greens, toasted sesame paste, a little soy and sugar. The thing I make when there is nothing in the fridge.',
+    700, null, 1],
+  ['Small Plates', 'Sardine Ochazuke',
+    'Tinned sardine over rice, hot green tea poured at the table, sesame and nori on top.',
+    850, 180, 1],
+  ['Noodles & Rice', 'Japanese Curry Rice',
+    'Roux blocks, onions cooked down properly, carrot and potato. Better on the second day.',
+    1200, 350, 1],
+  ['Noodles & Rice', 'Japanese Curry Udon',
+    "Yesterday's curry loosened with dashi, thick udon, spring onion. Wear an apron.",
+    1350, 430, 1],
+  ['Noodles & Rice', 'Tofu Udon',
+    'Clear dashi, silken tofu, udon, a lot of white pepper. The quiet one.',
+    1100, 290, 1],
+  ['From the Pot', 'Sukiyaki',
+    'Thin beef, leek, tofu, shiitake, raw egg to dip. Takes over the whole table. Serves two.',
+    2800, 1850, 1],
+  ['From the Pot', 'Napa Cabbage, Enoki and Pork Soup',
+    'Layered cabbage and pork belly, enoki, ginger, nothing else. Cheap, and the best thing here.',
+    1050, 400, 1],
+  ['Air Fryer', 'Air-fried Chicken',
+    'Soy, ginger and garlic overnight, potato starch, twelve minutes at 200°C, shaken twice.',
+    1150, 520, 1],
+  ['Air Fryer', 'Air-fried Potato Wedges', 'Skin on, paprika, a lot of salt.', 650, 100, 0],
 ];
 
 const insertCategory = db.prepare(`
@@ -103,6 +137,33 @@ const seedMenu = db.transaction(() => {
 
 const menu = seedMenu();
 
+/*
+ * One open-ended special, so the menu ships with the discount path exercised: curry udon is
+ * genuinely cheaper to make because it is yesterday's curry.
+ *
+ * v1 kept specials in their own table; here they live on the item as `discount_percent` plus
+ * an optional window, so this is the same special expressed in this schema. Guarded on the
+ * item having no special already, so re-seeding never stacks a discount on top of a price a
+ * manager has since changed.
+ */
+const seedSpecial = db.transaction(() => {
+  const udon = db
+    .prepare("SELECT id, discount_percent, special_price_cents FROM menu_items WHERE name = 'Japanese Curry Udon'")
+    .get();
+
+  if (!udon || udon.discount_percent != null || udon.special_price_cents != null) return false;
+
+  db.prepare(`
+    UPDATE menu_items
+    SET discount_percent = 26, special_starts_at = datetime('now'), updated_at = datetime('now')
+    WHERE id = ?
+  `).run(udon.id);
+
+  return true;
+});
+
+const special = seedSpecial();
+
 // --- Scheduling ------------------------------------------------------------
 
 // [day_of_week (1=Mon..7=Sun), start, end, role, required_staff]
@@ -150,16 +211,18 @@ const templates = seedTemplates();
 const VIEW_DAYS = 30;
 
 // Relative interest per item, roughly what a menu looks like: a couple of stars, a long tail.
+// An item missing from this table simply gets the floor weight, so adding a dish to the seed
+// without touching this list is harmless.
 const VIEW_WEIGHTS = {
-  'Margherita Pizza': 9,
-  'Grilled Salmon': 7,
-  Tiramisu: 5,
-  'Garlic Bread': 4,
-  Espresso: 4,
-  'Lemon Tart': 3,
-  'Fresh Orange Juice': 2,
-  'Soup of the Day': 2,
-  'Mushroom Risotto': 1,
+  'Japanese Curry Rice': 9,
+  Sukiyaki: 7,
+  'Air-fried Chicken': 6,
+  'Japanese Curry Udon': 5,
+  'Napa Cabbage, Enoki and Pork Soup': 4,
+  'Tofu Udon': 3,
+  'Air-fried Potato Wedges': 3,
+  'Sardine Ochazuke': 2,
+  'Sesame Sauce Salad': 2,
 };
 
 const seedViews = db.transaction(() => {
@@ -214,6 +277,11 @@ console.log(`Seeded ${menu.categories} new categor(ies) and ${menu.items} new me
 if (menu.costsBackfilled) {
   console.log(`Backfilled cost_cents on ${menu.costsBackfilled} existing item(s).`);
 }
+console.log(
+  special
+    ? 'Applied the curry udon special (26% off, open-ended).'
+    : 'Curry udon already has a special (or is not on the menu); left untouched.'
+);
 console.log(`Seeded ${templates} new shift template(s).`);
 console.log(
   views

@@ -126,6 +126,20 @@
   text-underline-offset: 3px;
 }
 
+/* The Japanese name of a dish, under its English name. Set in the mincho face, which is the
+   signage type — the sans would read as a translation rather than as the dish's own name. */
+.menu-card__jp {
+  margin: 0.1rem 0 0;
+  color: var(--accent-text);
+  font-family: var(--jp);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+}
+
+.menu-card--unavailable .menu-card__jp {
+  color: var(--lamp);
+}
+
 .menu-card__description {
   margin: 0.4rem 0 0;
   color: var(--muted);

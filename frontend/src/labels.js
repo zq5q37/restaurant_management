@@ -1,21 +1,36 @@
 /**
- * Japanese labels, kept on the client on purpose.
+ * Japanese labels for the menu, kept on the client on purpose.
  *
  * These are presentation, not data: the database stores one canonical English name per
- * category, which is what search, the CSV exports and the manager screens all work against.
- * Putting the Japanese in the `name` column instead would push it into every export and
- * every admin form for the sake of one label.
+ * category and dish, which is what search, the CSV exports and the manager screens all work
+ * against. Putting the Japanese in the `name` column instead would push it into every export
+ * and every admin form for the sake of one label.
  *
- * A category with no entry here simply renders without a Japanese line, so anything a
- * manager adds still works — it just is not captioned until someone adds it below.
+ * A dish or category with no entry here simply renders without its Japanese line, so anything
+ * added through the menu editor still works — it just is not captioned until someone adds it
+ * below. The proper home for this eventually is a translations table; this is the honest
+ * short version until that endpoint exists.
  */
 
 /** Keyed by the exact category name. */
 export const CATEGORY_JP = {
-  Appetizers: '前菜',
-  Mains: '主菜',
-  Desserts: '甘味',
-  Beverages: '飲み物',
+  'Small Plates': '小皿',
+  'Noodles & Rice': '麺と飯',
+  'From the Pot': '鍋物',
+  'Air Fryer': '揚げ物',
+};
+
+/** Keyed by the exact dish name. */
+export const DISH_JP = {
+  'Sesame Sauce Salad': '胡麻和え',
+  'Sardine Ochazuke': '鰯茶漬け',
+  'Japanese Curry Rice': 'カレーライス',
+  'Japanese Curry Udon': 'カレーうどん',
+  'Tofu Udon': '豆腐うどん',
+  Sukiyaki: 'すき焼き',
+  'Napa Cabbage, Enoki and Pork Soup': '白菜と豚の鍋',
+  'Air-fried Chicken': '唐揚げ',
+  'Air-fried Potato Wedges': 'ポテトウェッジ',
 };
 
 /** Per-screen kickers for the page header band. */

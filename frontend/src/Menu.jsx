@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, formatPrice } from './api';
 import ItemEditor from './ItemEditor';
 import PageHead from './PageHead';
-import { CATEGORY_JP, PAGE_JP } from './labels';
+import { CATEGORY_JP, DISH_JP, PAGE_JP } from './labels';
 import './menu.css';
 
 const SORTS = [
@@ -329,6 +329,14 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete, onOpen, isOpen 
             {item.name}
           </button>
         </h3>
+
+        {/* The dish's Japanese name under its English one. Absent for anything not in
+            labels.js, which is the intended behaviour for dishes added through the editor. */}
+        {DISH_JP[item.name] && (
+          <p className="menu-card__jp" lang="ja">
+            {DISH_JP[item.name]}
+          </p>
+        )}
 
         {item.description && <p className="menu-card__description">{item.description}</p>}
 

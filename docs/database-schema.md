@@ -222,6 +222,13 @@ survive `docker compose down` exactly like the database. Only the filename is st
 All share the password `Passw0rd!23`, overridable via the `SEED_PASSWORD` environment variable.
 **Local development only — never seed these accounts into a deployed database.**
 
+The menu itself is the Rokushichi board carried over from v1: four courses (Small Plates,
+Noodles & Rice, From the Pot, Air Fryer) and nine dishes with honest ingredient costs, plus one
+open-ended special — 26% off the curry udon, because it is yesterday's curry. Two rows are
+deliberately awkward so the reporting paths are exercised by the seed rather than only in
+production: Sesame Sauce Salad carries no cost (excluded from margin figures) and the potato
+wedges ship off the menu.
+
 The seed also writes **30 days of menu view history**, so the analytics dashboard has something to
 show on a fresh database instead of an empty grid. It is deterministic (no `Math.random`), runs only
 when `menu_item_views` is empty, and gives Friday and Saturday a heavier weighting so the trend line
