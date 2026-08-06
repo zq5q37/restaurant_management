@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "seed": "node db/seed.js",
+    "attach-photos": "node db/attach-photos.js",
     "inspect-db": "node db/inspect.js",
     "retire-starter-menu": "node db/retire-starter-menu.js"
   },

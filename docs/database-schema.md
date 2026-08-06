@@ -207,6 +207,27 @@ Uploaded images live in the `menu-images` named volume at `/app/uploads` (`UPLOA
 survive `docker compose down` exactly like the database. Only the filename is stored in
 `menu_items.image_path`; the directory is a deployment detail.
 
+### Dish photography
+
+The nine seed dishes ship with photographs, kept in `backend/seed-assets/dishes/` and attached by:
+
+```
+npm run attach-photos                              # host
+docker compose exec backend node db/attach-photos.js   # container
+```
+
+This is a **separate step from `npm run seed`** because the two write to different places: the
+seed writes rows to the database, `attach-photos` copies files into `UPLOAD_DIR`, and those are
+two different volumes. Wiping either alone leaves the other stale, which is why the photographs
+have their own command rather than riding along with the seed.
+
+It is idempotent and conservative: an item that already has an image is left alone, so a photo
+uploaded through the menu editor is never overwritten. `--force` replaces them anyway.
+
+Sources, authors and licences are recorded in `backend/seed-assets/dishes/ATTRIBUTION.md`. All
+nine came from Wikimedia Commons (CC0, CC BY or CC BY-SA) and were checked by eye against the
+dish before being used — two are near-misses and say so in that file.
+
 ## Seed data
 
 `npm run seed` (see `backend/db/seed.js`) creates one user per role. It is **idempotent** — it uses

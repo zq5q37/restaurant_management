@@ -98,6 +98,10 @@ app.get('/api/message', (req, res) => {
   - v1 keeps specials in their own table; here the same special is expressed as `discount_percent` + window on the item
   - the Japanese dish names now mean something, so `labels.js` captions dishes as well as courses
   - retired the old generic starter menu with a one-off scoped delete rather than a permanent step in `seed.js` — a fresh database never had those rows
+- Dish photography: nine photos from Wikimedia Commons in `backend/seed-assets/dishes/`, attached by `npm run attach-photos`
+  - Commons rather than a stock site because the licence and author come back as structured data, so `ATTRIBUTION.md` is recorded rather than guessed
+  - every photo was opened and looked at before use, not trusted on its filename — two are near-misses (salmon not sardine; pork-and-greens nabe not the layered napa version) and the file says so
+  - separate command from `seed.js` on purpose: the seed writes rows, this copies files, and the database and uploads are two different volumes
 
 **Blockers:** -
 
