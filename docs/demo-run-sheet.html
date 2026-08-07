@@ -1,0 +1,775 @@
+<title>Rokushichi — 15-minute demo run sheet</title>
+
+<style>
+  /*
+   * The run sheet wears the app's own skin: every colour below is a token lifted from
+   * frontend/src/index.css, so the sheet and the thing being demoed are visibly one project.
+   * Two themes, same as the app — Lantern Alley and Cat Cafe.
+   */
+  :root {
+    --bg: #f6f4ef;
+    --surface: #fffefb;
+    --surface-2: #e8e4da;
+    --band: #fbf3e2;
+    --line: #ddd8ce;
+    --line-strong: #c9c2b4;
+    --text: #14130f;
+    --muted: #6b6459;
+    --faint: #6f6958;
+    --accent: #e0a32e;
+    --accent-text: #8a5a12;
+    --sign: #a82f16;
+    --leaf: #3f6b33;
+    --lamp: #4e6672;
+
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --jp: 'Yu Mincho', 'Hiragino Mincho ProN', 'MS Mincho', serif;
+    --mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, 'Liberation Mono', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12100e;
+      --surface: #1e1915;
+      --surface-2: #241e19;
+      --band: #1d1711;
+      --line: #2a231d;
+      --line-strong: #33291f;
+      --text: #f3e3c4;
+      --muted: #a4977f;
+      --faint: #8b8172;
+      --accent: #e8a24c;
+      --accent-text: #e8a24c;
+      --sign: #eda78d;
+      --leaf: #6f9464;
+      --lamp: #7e9aa6;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    --bg: #12100e;
+    --surface: #1e1915;
+    --surface-2: #241e19;
+    --band: #1d1711;
+    --line: #2a231d;
+    --line-strong: #33291f;
+    --text: #f3e3c4;
+    --muted: #a4977f;
+    --faint: #8b8172;
+    --accent: #e8a24c;
+    --accent-text: #e8a24c;
+    --sign: #eda78d;
+    --leaf: #6f9464;
+    --lamp: #7e9aa6;
+  }
+
+  :root[data-theme='light'] {
+    --bg: #f6f4ef;
+    --surface: #fffefb;
+    --surface-2: #e8e4da;
+    --band: #fbf3e2;
+    --line: #ddd8ce;
+    --line-strong: #c9c2b4;
+    --text: #14130f;
+    --muted: #6b6459;
+    --faint: #6f6958;
+    --accent: #e0a32e;
+    --accent-text: #8a5a12;
+    --sign: #a82f16;
+    --leaf: #3f6b33;
+    --lamp: #4e6672;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+  h1, h2, h3 { margin: 0; font-weight: 900; letter-spacing: -0.02em; text-wrap: balance; }
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1rem; }
+  p { margin: 0; }
+
+  .kicker {
+    font-family: var(--jp);
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--accent-text);
+    margin-bottom: 0.4rem;
+  }
+
+  .lede { color: var(--muted); margin-top: 0.5rem; max-width: 46rem; }
+
+  header { border-bottom: 1px solid var(--line-strong); padding-bottom: 1.5rem; }
+
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem;
+    margin-top: 1rem; font-family: var(--mono); font-size: 0.78rem; color: var(--faint);
+  }
+
+  /* Section bands divided by hairlines — the app's own structural motif, not floating cards. */
+  section { border-bottom: 1px solid var(--line); padding: 2.25rem 0; }
+  section > h2 { margin-bottom: 0.35rem; }
+  .sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 1.4rem; max-width: 46rem; }
+
+  /* --- the clock spine --- */
+  .beat {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0 1.25rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .beat:first-of-type { border-top: 0; }
+  .clock {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-text);
+    padding-top: 0.1rem;
+  }
+  .dur { display: block; font-size: 0.72rem; font-weight: 400; color: var(--faint); }
+  .beat h3 { margin-bottom: 0.35rem; }
+  .beat ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+  .beat li { margin-bottom: 0.28rem; }
+  .beat li::marker { color: var(--line-strong); }
+
+  .say {
+    margin-top: 0.55rem; padding: 0.6rem 0.85rem;
+    border-left: 3px solid var(--accent);
+    background: var(--band);
+    font-size: 0.95rem;
+  }
+  .say b { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; color: var(--accent-text); display: block; }
+
+  kbd, code, .path {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.05em 0.35em;
+    white-space: nowrap;
+  }
+  pre {
+    margin: 0.7rem 0 0; padding: 0.8rem 0.9rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 4px;
+    overflow-x: auto; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5;
+  }
+  pre code { background: none; border: 0; padding: 0; white-space: pre; }
+
+  .tag {
+    display: inline-block; font-family: var(--mono); font-size: 0.66rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.1rem 0.45rem; border-radius: 2px; vertical-align: 0.15em;
+    border: 1px solid currentColor;
+  }
+  .tag--cut { color: var(--lamp); }
+  .tag--core { color: var(--accent-text); }
+
+  .scroll { overflow-x: auto; margin-top: 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--faint); font-weight: 700; border-bottom-color: var(--line-strong);
+  }
+  td.mono, .mono { font-family: var(--mono); font-size: 0.82rem; white-space: nowrap; }
+
+  .arrow { color: var(--accent-text); font-weight: 700; }
+  .partial { color: var(--lamp); }
+
+  .find {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--sign);
+    background: var(--surface);
+    padding: 0.9rem 1.05rem;
+    margin-top: 1rem;
+    border-radius: 0 4px 4px 0;
+  }
+  .find h3 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .find p + p { margin-top: 0.5rem; }
+  .find--good { border-left-color: var(--leaf); }
+  .find--note { border-left-color: var(--lamp); }
+
+  .qa { border-top: 1px solid var(--line); padding: 0.9rem 0; }
+  .qa:first-of-type { border-top: 0; }
+  .qa h3 { color: var(--accent-text); font-size: 0.98rem; margin-bottom: 0.3rem; }
+  .qa p + p { margin-top: 0.45rem; }
+
+  .check { list-style: none; margin: 0; padding: 0; }
+  .check li {
+    border-top: 1px solid var(--line); padding: 0.55rem 0 0.55rem 1.8rem;
+    position: relative;
+  }
+  .check li:first-child { border-top: 0; }
+  .check li::before {
+    content: '☐'; position: absolute; left: 0; top: 0.5rem;
+    color: var(--accent-text); font-size: 1.05rem;
+  }
+
+  a { color: var(--accent-text); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  svg text { font-family: var(--mono); font-size: 11px; fill: var(--text); }
+  svg .lbl { fill: var(--muted); font-size: 10px; }
+  svg .box { fill: var(--surface); stroke: var(--line-strong); }
+  svg .ln { stroke: var(--muted); fill: none; }
+  svg .bad { stroke: var(--sign); stroke-dasharray: 4 3; }
+  svg .badtext { fill: var(--sign); }
+
+  @media (max-width: 640px) {
+    .beat { grid-template-columns: 1fr; gap: 0.3rem; }
+    .clock { padding-top: 0; }
+    .dur { display: inline; margin-left: 0.5rem; }
+  }
+
+  @media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    section { break-inside: auto; }
+    .beat, .find, .qa { break-inside: avoid; }
+    pre, .say { background: #f4f4f4; }
+  }
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="kicker" lang="ja">六七 · 発表</p>
+  <h1>Rokushichi — 15-minute demo run sheet</h1>
+  <p class="lede">
+    Read from this, don't show it. Everything the audience sees is the running app, the editor,
+    and one terminal. The clock column is elapsed time, not wall clock — start it when you start
+    talking.
+  </p>
+  <div class="meta">
+    <span>5-day sprint · 2026-08-03 → 08-07</span>
+    <span>25 commits</span>
+    <span>Express · React · SQLite · JWT · Docker</span>
+    <span>13 min content + 2 min questions</span>
+  </div>
+</header>
+
+<section>
+  <h2>Before you start</h2>
+  <p class="sub">Two minutes of setup buys you the whole demo. Do this before the room is watching.</p>
+  <ul class="check">
+    <li><code>docker compose ps</code> — backend and frontend both <b>Up</b>. If not: <code>docker compose up -d</code>, wait ~20s.</li>
+    <li>Open <span class="path">http://localhost:5173</span> and <b>log out</b>, so you start on the sign-in screen.</li>
+    <li>The sign-in screen shows dev seed-account chips (Vite <code>DEV</code> only) — one click each to switch role. Password for all: <code>Passw0rd!23</code></li>
+    <li>Pick a theme and stay in it. <b>Dark ("Lantern Alley")</b> demos better on a projector.</li>
+    <li>Editor: pre-open these five tabs so you never search live —
+      <span class="path">backend/db/schema.sql</span>,
+      <span class="path">backend/middleware/auth.js</span>,
+      <span class="path">backend/analytics/queries.js</span>,
+      <span class="path">backend/menu/gacha.js</span>,
+      <span class="path">backend/routes/gacha.js</span></li>
+    <li>One terminal, already <code>cd</code>'d to the repo root, font size up.</li>
+    <li>Browser zoom ~110% so code and charts are readable from the back.</li>
+    <li>Have <span class="path">docs/wireframes/category_theory_graph.png</span> open in a tab — you will be asked for it.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>The run</h2>
+  <p class="sub">
+    Beats marked <span class="tag tag--cut">cut if behind</span> are the ones to drop — they are
+    breadth, and the schema section is the one that earns the marks.
+  </p>
+
+  <div class="beat">
+    <div class="clock">0:00<span class="dur">45s</span></div>
+    <div>
+      <h3>Frame it</h3>
+      <div class="say"><b>say</b>
+        "Rokushichi is a restaurant management app — one menu, one staff roster, one analytics
+        dashboard, four roles. Express, React, SQLite, JWT, all in Docker. Built over five days.
+        I want to spend most of the time on how the data is shaped, because that's where the
+        real decisions were."
+      </div>
+      <p style="margin-top:0.55rem;color:var(--muted);font-size:0.92rem;">
+        Don't list features here. You're about to show them.
+      </p>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">0:45<span class="dur">2:00</span></div>
+    <div>
+      <h3>Sign in as a customer <span class="tag tag--core">core</span></h3>
+      <ul>
+        <li>Click the <code>customer@example.com</code> chip → sign in.</li>
+        <li>Point at the nav: <b>Menu and Profile only.</b></li>
+        <li>Scroll the menu — course bands, Japanese course names, one dish on special (curry udon, 26% off, struck-through price).</li>
+        <li><b>Turn the dial</b> on the gacha. Wait for the capsule to drop and burst — the dish pops up modally.</li>
+        <li>Hit <b>See dish</b> — it closes, scrolls to that card and opens it.</li>
+      </ul>
+      <div class="say"><b>say</b>
+        "The nav is short because this is a customer. But hiding a link isn't access control —
+        the server enforces it, and I'll show you where in a minute. The capsule machine is the
+        one thing here that isn't standard CRUD, so I'll come back to it."
+      </div>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">2:45<span class="dur">3:15</span></div>
+    <div>
+      <h3>Switch to manager — the operational side</h3>
+      <ul>
+        <li>Log out → <code>manager@example.com</code> chip → sign in. <b>Nav grows</b>: Schedule, Analytics, Users appear.</li>
+        <li><b>Menu:</b> filter by course, search, then <b>Edit</b> a dish — show the pricing block (flat special <i>or</i> percent, never both) and the image upload. <span class="tag tag--cut">cut if behind</span></li>
+        <li><b>Schedule:</b> week view → click a day in the strip → day view. Open a shift → the editor is a native <code>&lt;dialog&gt;</code>, assign someone, show the coverage bar and an understaffed badge.</li>
+        <li><b>Analytics:</b> tab through Overview → Popular → Menu &amp; profit. Change the range preset. Toggle a chart to its <b>table twin</b>. Mention CSV export and print-to-PDF. <span class="tag tag--cut">cut if behind</span></li>
+      </ul>
+      <div class="say"><b>say</b>
+        "Charts are hand-rolled SVG — line, ranked bars, stacked columns, meters — no charting
+        library, because every one of them had to be re-tokenised for two themes anyway. Every
+        chart ships a table twin, so the data is reachable without reading a picture."
+      </div>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">6:00<span class="dur">4:30</span></div>
+    <div>
+      <h3>The schema as a category <span class="tag tag--core">the centrepiece</span></h3>
+      <p style="color:var(--muted);font-size:0.92rem;">
+        Open <span class="path">backend/db/schema.sql</span> beside
+        <span class="path">docs/wireframes/category_theory_graph.png</span>. Full detail in the
+        next section — this is the beat, the material is below.
+      </p>
+      <ul>
+        <li>Show the graph you drew on day one. Say what the notation is: <b>objects are types, arrows are columns.</b></li>
+        <li>Then walk the three places the implementation forced a revision (see below): the <b>two Role objects</b>, the <b>reversed availability arrow</b>, and <b>Image collapsing into an attribute</b>.</li>
+        <li>Then the nullable columns as <b>partial morphisms</b>, and how <code>cost_cents</code> being partial is what the gacha's weighting has to solve.</li>
+        <li>Close on the <b>non-commuting square</b>: notifications.</li>
+      </ul>
+      <div class="say"><b>say</b>
+        "I drew the schema as a category before writing any DDL. It was wrong in three specific
+        ways, and each one was wrong in a way the notation itself makes obvious once you look."
+      </div>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">10:30<span class="dur">2:00</span></div>
+    <div>
+      <h3>Code — four exhibits</h3>
+      <p style="color:var(--muted);font-size:0.92rem;">Files and lines in the Code exhibits section. ~30s each, don't read them aloud.</p>
+      <ul>
+        <li><span class="path">middleware/auth.js</span> — the role is re-read from the DB every request, never trusted from the token.</li>
+        <li><span class="path">routes/menuItems.js:77</span> — the customer cannot opt out of the availability filter. This is the enforcement behind that short nav.</li>
+        <li><span class="path">analytics/queries.js:4</span> — the two rules the whole analytics layer obeys.</li>
+        <li><span class="path">menu/gacha.js:106</span> — the one line that makes the gacha a merchandising tool rather than a toy.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">12:30<span class="dur">45s</span></div>
+    <div>
+      <h3>The claim, tested</h3>
+      <p>Run it live. It prints a table, then draws 100,000 times through the real selector.</p>
+      <pre><code>docker compose exec backend npm run gacha-weights</code></pre>
+      <div class="say"><b>say</b>
+        "There's no test framework in this project — that's a gap. What I did instead is make the
+        claim falsifiable. The feature claims it promotes dishes that are profitable and
+        overlooked. This splits the menu at both medians, measures the actual draw rates, and
+        exits non-zero if either ratio drops to 1. Right now it's 1.96× and 1.65×."
+      </div>
+    </div>
+  </div>
+
+  <div class="beat">
+    <div class="clock">13:15<span class="dur">45s</span></div>
+    <div>
+      <h3>Close — name the gaps yourself</h3>
+      <div class="say"><b>say</b>
+        "Three things I'd fix next. There's no token revocation — changing your password doesn't
+        invalidate a live session, and that needs a token-version column. There's no automated
+        test suite. And <code>cost_cents</code> is currently readable by any signed-in user on the
+        menu endpoints, which is a leak I found while building the gacha, documented, and
+        deliberately didn't paper over."
+      </div>
+      <p style="margin-top:0.55rem;color:var(--muted);font-size:0.92rem;">
+        Volunteering these is worth more than being caught by them. Then stop talking.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The schema as a category</h2>
+  <p class="sub">
+    Your day-one graph used entity objects and relationship arrows. The instructor's sample uses
+    the stricter functorial reading — <b>objects are types (entities, attributes, and finite
+    enums), and every column is a morphism</b>. Re-read in that notation, the shipped schema
+    differs from your graph in three places, and each difference is a real finding.
+  </p>
+
+  <h3 style="margin-top:1.6rem;">Every foreign key, as an arrow</h3>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Morphism</th><th>Total?</th><th>On delete</th><th>What it means</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">menu_items <span class="arrow">—category→</span> categories</td>
+          <td>total</td><td class="mono">RESTRICT</td>
+          <td>A dish must sit in a course. You cannot delete a course out from under its dishes.</td>
+        </tr>
+        <tr>
+          <td class="mono">shifts <span class="arrow">—template→</span> shift_templates</td>
+          <td class="partial">partial</td><td class="mono">SET NULL</td>
+          <td>Into <span class="mono">1 + templates</span>. A hand-made shift has no rule; deleting a rule leaves its shifts standing but forgetting where they came from.</td>
+        </tr>
+        <tr>
+          <td class="mono">shift_assignments <span class="arrow">—shift→</span> shifts</td>
+          <td>total</td><td class="mono">CASCADE</td>
+          <td rowspan="2">The two legs of the junction. <span class="mono">UNIQUE(shift_id, user_id)</span> makes the pair <b>jointly monic</b> — that is exactly "the same person cannot be assigned twice".</td>
+        </tr>
+        <tr>
+          <td class="mono">shift_assignments <span class="arrow">—user→</span> users</td>
+          <td>total</td><td class="mono">CASCADE</td>
+        </tr>
+        <tr>
+          <td class="mono">shift_assignments <span class="arrow">—assigned_by→</span> users</td>
+          <td class="partial">partial</td><td class="mono">SET NULL</td>
+          <td>Who rostered whom. Recorded, and currently read by nothing.</td>
+        </tr>
+        <tr>
+          <td class="mono">staff_availability <span class="arrow">—user→</span> users</td>
+          <td>total</td><td class="mono">CASCADE</td>
+          <td>Note the direction — see finding 2.</td>
+        </tr>
+        <tr>
+          <td class="mono">notifications <span class="arrow">—user→</span> users</td>
+          <td>total</td><td class="mono">CASCADE</td>
+          <td rowspan="2">See finding 4: these two do not commute with the assignment span.</td>
+        </tr>
+        <tr>
+          <td class="mono">notifications <span class="arrow">—shift→</span> shifts</td>
+          <td class="partial">partial</td><td class="mono">SET NULL</td>
+        </tr>
+        <tr>
+          <td class="mono">menu_item_views <span class="arrow">—item→</span> menu_items</td>
+          <td>total</td><td class="mono">CASCADE</td>
+          <td>Composes with <span class="mono">—category→</span>; see finding 5.</td>
+        </tr>
+        <tr>
+          <td class="mono">menu_item_views <span class="arrow">—user→</span> users</td>
+          <td class="partial">partial</td><td class="mono">SET NULL</td>
+          <td>A view can outlive the account that made it.</td>
+        </tr>
+        <tr>
+          <td class="mono">activity_log <span class="arrow">—user→</span> users</td>
+          <td class="partial">partial</td><td class="mono">SET NULL</td>
+          <td>A failed login has no user yet — that row is exactly the <span class="mono">1</span> component.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="find">
+    <h3>Finding 1 — <code>Role</code> is two objects, not one</h3>
+    <p>
+      Your graph has a single <code>Role</code> box receiving both <code>User —hasRole→</code> and
+      <code>Shift —requiresRole→</code>. The schema says otherwise:
+    </p>
+    <pre><code>users.role           CHECK (role IN ('customer','staff','manager','admin'))
+shift_templates.role CHECK (role IN ('server','host','cleaner','cook'))</code></pre>
+    <p>
+      Two disjoint finite sets, so two distinct objects. Drawing one box was a type error — it
+      would let you compose an arrow that says a shift requires a <i>manager</i>, which is a
+      different kind of thing from requiring a <i>cook</i>. The code keeps them apart too:
+      <span class="path">routes/users.js:9</span> and
+      <span class="path">schedule/store.js:3</span>, each with a "mirrors" comment.
+    </p>
+    <p>
+      This is also the answer to <b>"why is there no roles table?"</b> — in this notation a finite
+      enum is already an object. A physical table would add a join and buy nothing, because the
+      element set is fixed by the application, not by data.
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>Finding 2 — the availability arrow pointed the wrong way</h3>
+    <p>
+      Your graph draws <code>Staff —hasAvailability→ Availability</code>. But a person has
+      <i>many</i> availability windows, so that assignment is not a function and cannot be an
+      arrow. The FK is the other direction:
+    </p>
+    <pre><code>staff_availability.user_id → users            -- Availability —user→ Staff</code></pre>
+    <p>
+      In the functorial model arrows are total functions, so a foreign key can only ever point
+      from the many side to the one side. "Has many" is not an arrow — it is the
+      <b>preimage</b> of one.
+    </p>
+  </div>
+
+  <div class="find">
+    <h3>Finding 3 — <code>Image</code> stopped being an object</h3>
+    <p>
+      Your graph has <code>MenuItem —hasImage→ Image</code>. There is no images table. What shipped
+      is <code>menu_items.image_path TEXT</code> — nullable — with the bytes on a separate Docker
+      volume served by <span class="path">/api/images</span>.
+    </p>
+    <p>
+      So the arrow lands in <span class="mono">1 + String</span>, and the image itself lives
+      outside this category entirely. The database stores a <i>name</i>, not the thing. Worth
+      saying out loud: that is a boundary, and it is why the database and the uploads are two
+      volumes that can get out of step — which is exactly why
+      <span class="path">db/attach-photos.js</span> is a separate command from <code>seed.js</code>.
+    </p>
+  </div>
+
+  <div class="find find--note">
+    <h3>Finding 4 — a square that should commute, and doesn't</h3>
+    <p>
+      A notification carries both a user and a shift. An assignment carries both a user and a
+      shift. Nothing makes them agree: the schema happily stores a notification telling a cleaner
+      about a shift they are not on.
+    </p>
+    <div class="scroll">
+      <svg viewBox="0 0 520 170" width="100%" style="max-width:520px;margin-top:0.4rem;" role="img" aria-label="Commuting square: notifications to users and shifts, versus shift_assignments to users and shifts. The square is marked as not enforced.">
+        <rect class="box" x="8" y="14" width="150" height="30" rx="3"/>
+        <text x="83" y="34" text-anchor="middle">notifications</text>
+        <rect class="box" x="330" y="14" width="150" height="30" rx="3"/>
+        <text x="405" y="34" text-anchor="middle">shifts</text>
+        <rect class="box" x="8" y="122" width="150" height="30" rx="3"/>
+        <text x="83" y="142" text-anchor="middle">shift_assignments</text>
+        <rect class="box" x="330" y="122" width="150" height="30" rx="3"/>
+        <text x="405" y="142" text-anchor="middle">users</text>
+
+        <path class="ln" d="M158 29 H322" marker-end="url(#a)"/>
+        <text class="lbl" x="240" y="22" text-anchor="middle">shift</text>
+        <path class="ln" d="M158 137 H322" marker-end="url(#a)"/>
+        <text class="lbl" x="240" y="130" text-anchor="middle">user</text>
+        <path class="ln" d="M83 44 V116" marker-end="url(#a)"/>
+        <text class="lbl" x="76" y="84" text-anchor="end">shift</text>
+        <path class="ln" d="M405 44 V116" marker-end="url(#a)"/>
+        <text class="lbl" x="414" y="84">user</text>
+
+        <path class="ln bad" d="M175 60 Q244 86 175 112"/>
+        <text class="badtext" x="250" y="90" font-size="10">not enforced</text>
+
+        <defs>
+          <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor" style="color:var(--muted)"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p>
+      SQLite cannot state "these two paths agree", so the application maintains it —
+      <code>notifyAssignees()</code> in <span class="path">backend/schedule/store.js</span> walks
+      the assignments and writes one notification each. <b>The category can express an invariant
+      the database cannot enforce.</b> That is a good thing to be able to name.
+    </p>
+  </div>
+
+  <div class="find find--good">
+    <h3>Finding 5 — the analytics queries <i>are</i> composition</h3>
+    <p>
+      "Views per course" is the composite
+      <span class="mono">menu_item_views —item→ menu_items —category→ categories</span>. The SQL is
+      that composite, spelled out as a join chain — <code>viewsByCategory()</code> in
+      <span class="path">backend/analytics/queries.js</span>. Nothing clever, but it is a clean
+      example of a path in the schema category becoming a query.
+    </p>
+  </div>
+
+  <h3 style="margin-top:2rem;">Partial morphisms — and why one of them drives an algorithm</h3>
+  <p style="color:var(--muted);font-size:0.92rem;margin-top:0.4rem;">
+    Four columns are nullable, so four arrows are partial: they land in
+    <span class="mono">1 + X</span>. Usually that is just "unknown". One of them is load-bearing.
+  </p>
+  <pre><code>menu_items.cost_cents  INTEGER  CHECK (cost_cents IS NULL OR cost_cents >= 0)
+-- "an item whose cost nobody has entered yet is excluded from margin
+--  reporting rather than being reported as 100% profit"   — schema.sql:36</code></pre>
+  <p style="margin-top:0.8rem;">
+    The gacha weights every dish by margin. Margin is
+    <span class="mono">price − cost</span>, so it is only defined where <code>cost_cents</code> is.
+    But the draw has to be a total function on the pool — every available dish needs a weight.
+    So the algorithm must decide what to do on the <span class="mono">1</span> component, and
+    there are exactly three options:
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Option</th><th>Categorically</th><th>Why not / why</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Exclude the dish</td>
+          <td>Restrict the domain</td>
+          <td>The machine would silently hold fewer dishes than the menu shows. A data-entry gap in the office would edit the dining room.</td>
+        </tr>
+        <tr>
+          <td>Treat cost as 0</td>
+          <td>Extend with a wrong value</td>
+          <td>Reports it as pure profit — the exact thing the schema comment refuses to do. It would make that dish the most promoted on the board.</td>
+        </tr>
+        <tr>
+          <td><b>Score at the median of the defined part</b></td>
+          <td>Extend with the best available estimate</td>
+          <td><b>Chosen.</b> "As promoted as a typical dish on this menu" — as far as honesty goes when nobody has entered a number. <span class="path">menu/gacha.js:136</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="say" style="margin-top:1rem;"><b>say</b>
+    "The nullable column isn't a modelling accident I worked around — it's a partial function, and
+    the feature had to pick a total extension of it. The verification script prints which dishes
+    are riding on that estimate, so the fix is obvious: enter the cost."
+  </div>
+
+  <h3 style="margin-top:2rem;">Two more structuring decisions worth having ready</h3>
+  <div class="find find--note">
+    <h3>Specials: attributes instead of an object</h3>
+    <p>
+      v1 of this project had a separate specials table — <span class="mono">Special —item→ MenuItem</span>,
+      many over time. This version put them on the item as four columns plus
+      <span class="mono">CHECK (special_price_cents IS NULL OR discount_percent IS NULL)</span>.
+    </p>
+    <p>
+      The trade, stated plainly: collapsing the object <b>loses the history</b> — the schema can
+      only hold the <i>current</i> special, never past ones. It also needs a table-level CHECK to
+      say "exactly one of these two", because SQL has no sum type; in the category that codomain
+      is a coproduct and would need no constraint at all.
+    </p>
+  </div>
+  <div class="find find--note">
+    <h3>Templates and shifts are two objects, on purpose</h3>
+    <p>
+      <code>shift_templates</code> is a weekly rule — <span class="mono">day_of_week ∈ {1..7}</span>
+      plus two <span class="mono">HH:MM</span> strings. <code>shifts</code> is an instance, with
+      absolute timestamps. Same-looking data, different objects, because they answer different
+      questions.
+    </p>
+    <p>
+      The payoff is concrete: a 22:00–02:00 closing shift is one unambiguous interval, so the
+      overlap test is <span class="mono">a.start &lt; b.end AND b.start &lt; a.end</span> with no
+      midnight special case (<span class="path">schedule/store.js</span>). And
+      <span class="mono">UNIQUE(template_id, shift_date)</span> is what makes "generate this week"
+      idempotent — you can press it twice.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Code exhibits</h2>
+  <p class="sub">Open, point at the named lines, say the one sentence. Do not read the code aloud.</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Open</th><th>Point at</th><th>Say</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">backend/middleware/auth.js</td>
+          <td class="mono">lines 5, 25</td>
+          <td>"The JWT carries a role, but I never trust it. Every request re-reads the user row, so deactivating an account takes effect on the next request rather than in eight hours when the token expires."</td>
+        </tr>
+        <tr>
+          <td class="mono">backend/routes/menuItems.js</td>
+          <td class="mono">lines 15, 77–83</td>
+          <td>"This is the enforcement behind the short customer nav. A customer doesn't get an availability filter they can flip — the WHERE clause is added for them and there's no parameter that removes it."</td>
+        </tr>
+        <tr>
+          <td class="mono">backend/analytics/queries.js</td>
+          <td class="mono">lines 4–12</td>
+          <td>"Two rules for the whole analytics layer. Ranges compare raw timestamps, never <code>date(col) BETWEEN</code>, because wrapping the column makes the index unusable. And pricing stays in JavaScript so the specials rules have one source of truth instead of a SQL copy that can disagree with what customers are charged."</td>
+        </tr>
+        <tr>
+          <td class="mono">backend/menu/gacha.js</td>
+          <td class="mono">line 106</td>
+          <td>"One line. Squaring is convex, so it punishes the middle harder than the top — which is what turns a weighted sum into an <i>and</i>. A dish that's best on margin but most-viewed loses to a dish that's decent at both."</td>
+        </tr>
+        <tr>
+          <td class="mono">backend/routes/gacha.js</td>
+          <td class="mono">lines 36, 121</td>
+          <td>"Two deliberate boundaries — the response is built from a named field list so cost can't leak, and a draw writes no view row, because letting the machine count its own promotion as interest would corrupt the signal it reads from." <span class="tag tag--cut">cut if behind</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Questions you should expect</h2>
+
+  <div class="qa">
+    <h3>"Why SQLite?"</h3>
+    <p>Single file on a Docker volume, so the whole environment is <code>docker compose up</code>. <code>better-sqlite3</code> is synchronous, which keeps the route handlers readable. Concurrency wasn't the assignment — and the schema is ordinary SQL, so Postgres is a migration, not a rewrite.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"Could someone forge a role in the JWT?"</h3>
+    <p>They'd have to forge an HS256 signature. But even if they did, it wouldn't help — <span class="path">middleware/auth.js</span> re-reads the role from the database on every request and the token's copy is only used to find the row.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"What about SQL injection?"</h3>
+    <p>Every query is a prepared statement with named parameters. The one place user input touches SQL structure is the sort order, and that's a whitelist lookup — <code>SORTS[sort] || default</code> in <span class="path">routes/menuItems.js</span>, so an unknown value falls back rather than interpolating. Search also escapes <code>%</code> and <code>_</code> so a search for "100%" doesn't match everything.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"Why no roles table?"</h3>
+    <p>Finding 1 above. A four-element fixed set is already an object in the category; a table would add a join and no information. The trade is real though: adding a role means a schema change, not a row.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"Where are the tests?"</h3>
+    <p>Don't dodge this. There is no test framework — that's the biggest gap. What exists instead: <code>npm run gacha-weights</code> asserts the feature's actual claim and exits non-zero, and the standup log records bugs found by driving the UI rather than reading it. Next step would be supertest against the routes, starting with the permission matrix, since that's the part where a regression is a security bug.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"Is the gacha just random?"</h3>
+    <p>No — and the code never uses the word. Each dish gets a weight from margin and from how overlooked it is, both normalised across the pool, blended and squared. Roulette-wheel selection over the cumulative weights. Every dish keeps a floor of 0.15 so the machine can still surprise you.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"Why is the view count a good demand signal?"</h3>
+    <p>It isn't a great one — it's the best one available, because there's no orders table. Say that plainly. A view is recorded when someone opens a single dish, never when a dish merely appears in the grid, which is the closest this app gets to intent.</p>
+  </div>
+
+  <div class="qa">
+    <h3>"What would you do differently?"</h3>
+    <p><code>staff_availability</code> has full CRUD and no UI, and — worse — the scheduler never consults it. The arrow exists and the composition is never taken. That's the first thing I'd finish, because it's the one place where the model promises something the app doesn't do.</p>
+  </div>
+</section>
+
+<section style="border-bottom:0;">
+  <h2>If something breaks</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Symptom</th><th>Do this</th></tr></thead>
+      <tbody>
+        <tr><td>Page won't load</td><td class="mono">docker compose up -d</td></tr>
+        <tr><td>Menu is empty</td><td class="mono">docker compose exec backend npm run seed</td></tr>
+        <tr><td>Dishes have no photos</td><td class="mono">docker compose exec backend npm run attach-photos</td></tr>
+        <tr><td>Not sure what's in the DB</td><td class="mono">docker compose exec backend npm run inspect-db</td></tr>
+        <tr><td>Gacha animation doesn't play</td><td>Reduced motion is on in your OS. The popup still appears instantly — say so, it's a feature.</td></tr>
+        <tr><td>Logged in as the wrong role</td><td>Log out; the seed chips are on the sign-in screen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.6rem;color:var(--muted);font-size:0.9rem;">
+    If the demo dies entirely, fall back to the schema section — it needs only
+    <span class="path">schema.sql</span> and the graph PNG, and it's the part worth the most.
+  </p>
+</section>
+
+</div>
