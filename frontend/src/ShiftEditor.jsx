@@ -313,7 +313,7 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
               </option>
             ))}
           </select>
-          <span className="event__title-caption">shift</span>
+          {/* <span className="event__title-caption">shift</span> */}
         </div>
 
         {retiredRole && (
@@ -424,9 +424,9 @@ function ShiftEditor({ token, shift, staff, defaultDate, onClose, onSaved, onDel
                   </button>
                 </div>
 
-                <p className="event__muted">
+                {/* <p className="event__muted">
                   Someone already working an overlapping shift is refused, with the clash named.
-                </p>
+                </p> */}
               </>
             )}
           </div>
