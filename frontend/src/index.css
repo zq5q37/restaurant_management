@@ -821,6 +821,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* The same look for a control that is unavailable but must keep its focus. `disabled` takes
+   focus off a focused element and drops it on <body>, which throws a keyboard user out of
+   whatever they were doing — so a button that disables itself mid-interaction uses this and
+   guards in its handler instead. The browser styles nothing for aria-disabled on its own. */
+button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* The default button is the amber plate; most buttons in a dense UI should not be. */
 .button--ghost {
   padding: 0.32rem 0.65rem;

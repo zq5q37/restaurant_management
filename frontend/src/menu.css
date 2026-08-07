@@ -266,3 +266,69 @@
     border-bottom: 0;
   }
 }
+
+/* ------------------------------------------------- menu · item editor --- */
+
+/*
+ * The editor as a dialog over the menu, rather than a panel that shoves the courses down the
+ * page. Same frame as .event in schedule.css — one idea of what a dialog is in this app.
+ *
+ * The dialog supplies only the frame; the .panel inside keeps its own padding and stays the
+ * scroll container, so every `.panel__*` rule it already had goes on working untouched. That
+ * matters because .panel is shared with Profile and Users, and is not this file's to redefine.
+ */
+.item-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: min(46rem, calc(100vh - 3rem));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+/* Matching .event::backdrop, which is where the values come from. */
+.item-dialog::backdrop {
+  background: rgb(6 5 4 / 62%);
+}
+
+:root[data-theme='light'] .item-dialog::backdrop {
+  background: rgb(20 19 15 / 34%);
+}
+
+/* The frame is the dialog's job now, so the panel drops its own and takes over scrolling. */
+.item-dialog .panel {
+  max-height: inherit;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+/* Sticky so Close stays reachable while the pricing and image sections run past the fold —
+   the same reason .event__bar is sticky. */
+.item-dialog .panel__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: -1.1rem -1.25rem 0.5rem;
+  padding: 0.7rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .item-dialog[open] {
+    animation: item-dialog-in 140ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  @keyframes item-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+  }
+}

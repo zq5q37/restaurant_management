@@ -250,17 +250,17 @@ function Menu({ token, user, onUnauthorized }) {
         )}
       </div>
 
+      {/* A modal <dialog> lives in the browser's top layer, so no wrapper here — a container
+          would only constrain an element that is not laid out inside it anyway. */}
       {canManage && editing && (
-        <div className="page--padded">
-          <ItemEditor
-            token={token}
-            categories={categories}
-            item={editing === 'new' ? null : editing}
-            onClose={() => setEditing(null)}
-            onSaved={handleSaved}
-            onUnauthorized={onUnauthorized}
-          />
-        </div>
+        <ItemEditor
+          token={token}
+          categories={categories}
+          item={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={handleSaved}
+          onUnauthorized={onUnauthorized}
+        />
       )}
 
       {/*
@@ -269,12 +269,7 @@ function Menu({ token, user, onUnauthorized }) {
         machine is pushing. It takes the course filter but not the search box, because if you
         have typed a dish name you already know what you want.
       */}
-      <Gacha
-        token={token}
-        categoryId={categoryId}
-        onSeeDish={revealItem}
-        onUnauthorized={onUnauthorized}
-      />
+
 
       {error && (
         <p role="alert" className="form-error page--padded">
@@ -290,15 +285,21 @@ function Menu({ token, user, onUnauthorized }) {
 
       {grouped
         ? Object.entries(grouped).map(([categoryName, categoryItems]) => (
-            <Course key={categoryName} name={categoryName} items={categoryItems}>
-              <ItemGrid items={categoryItems} {...gridProps} />
-            </Course>
-          ))
+          <Course key={categoryName} name={categoryName} items={categoryItems}>
+            <ItemGrid items={categoryItems} {...gridProps} />
+          </Course>
+        ))
         : items.length > 0 && (
-            <Course name="Results" items={items} sorted>
-              <ItemGrid items={items} {...gridProps} />
-            </Course>
-          )}
+          <Course name="Results" items={items} sorted>
+            <ItemGrid items={items} {...gridProps} />
+          </Course>
+        )}
+      <Gacha
+        token={token}
+        categoryId={categoryId}
+        onSeeDish={revealItem}
+        onUnauthorized={onUnauthorized}
+      />
     </div>
   );
 }

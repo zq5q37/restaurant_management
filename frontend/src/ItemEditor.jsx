@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiFetch, formatPrice } from './api';
 
 /** The API speaks integer cents; humans type dollars. Convert at the edge, in one place. */
@@ -10,8 +10,20 @@ function dollarsToCents(value) {
   return Math.round(number * 100);
 }
 
+/**
+ * Create or edit one menu item, over the menu rather than shoved into it.
+ *
+ * A native <dialog> for the same reasons ShiftEditor.jsx uses one: focus is trapped in the
+ * form, the menu behind goes inert, and the backdrop is a pseudo-element. Hand-rolling that is
+ * a few hundred lines of focus management to get wrong.
+ *
+ * It does NOT close on a backdrop click, matching ShiftEditor. Both are forms holding typed
+ * input, and losing a half-entered price to a stray click is worse than having to reach for
+ * Escape or Close.
+ */
 function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized }) {
   const isNew = !item;
+  const dialogRef = useRef(null);
 
   const [categoryId, setCategoryId] = useState(item?.category_id ?? categories[0]?.id ?? '');
   const [name, setName] = useState(item?.name ?? '');
@@ -20,6 +32,45 @@ function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized 
 
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Held in a ref so the effect below can stay mount-only: Menu passes a new arrow function
+  // every render, and depending on it would tear down and re-open the dialog mid-edit.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return undefined;
+
+    // showModal(), not the `open` attribute — only the former is modal, and without it there is
+    // no focus trap, no inert background and no Escape.
+    if (!dialog.open) dialog.showModal();
+
+    /*
+     * Escape is handled here and the default prevented, so the browser cannot close the element
+     * behind React's back. ShiftEditor.jsx documents the failure this avoids: a dialog the
+     * browser closed sits at `open === false` while `editing` in Menu is still set, so clicking
+     * Edit on the same dish changes no state, nothing re-renders, and the editor never returns.
+     * Closing through React unmounts the element instead, which cannot get out of step.
+     *
+     * On `document`, NOT on the dialog — and that difference is load-bearing. A dialog-scoped
+     * listener only sees the key while focus is inside the dialog, and focus can leave without
+     * the user doing anything: a control that disables itself while a request is in flight has
+     * focus taken from it and dropped on <body>. The browser still treats Escape as a close
+     * request on the top-layer dialog, so the listener misses it and the desync above happens
+     * anyway. Reproduced by saving and then pressing Escape.
+     *
+     * `dialog.open` keeps it a no-op when this dialog is not the one showing.
+     */
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape' || !dialog.open) return;
+      event.preventDefault();
+      onCloseRef.current();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   /** Every request goes through here so 401 handling and error display are never forgotten. */
   async function run(fn) {
@@ -43,6 +94,8 @@ function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized 
 
   async function handleDetailsSubmit(event) {
     event.preventDefault();
+    // The guard that `aria-disabled` cannot enforce on its own — see the Save button below.
+    if (busy) return;
 
     const price_cents = dollarsToCents(price);
     if (isNew && price_cents === null) {
@@ -73,71 +126,81 @@ function ItemEditor({ token, categories, item, onClose, onSaved, onUnauthorized 
   }
 
   return (
-    <div className="panel">
-      <div className="panel__head">
-        <h2>{isNew ? 'New menu item' : `Edit: ${item.name}`}</h2>
-        <button type="button" onClick={onClose} className="button--ghost">
-          Close
-        </button>
-      </div>
+    /* The inner .panel stays the scroll container and keeps every descendant rule it already
+       had; the dialog only supplies the frame. See .item-dialog in menu.css. */
+    <dialog className="item-dialog" ref={dialogRef} aria-labelledby="ed-title">
+      <div className="panel">
+        <div className="panel__head">
+          <h2 id="ed-title">{isNew ? 'New menu item' : `Edit: ${item.name}`}</h2>
+          <button type="button" onClick={onClose} className="button--ghost">
+            Close
+          </button>
+        </div>
 
-      {error && <p role="alert" className="form-error">{error}</p>}
+        {error && <p role="alert" className="form-error">{error}</p>}
 
-      <form onSubmit={handleDetailsSubmit} className="panel__section">
-        <h3>Details</h3>
+        <form onSubmit={handleDetailsSubmit} className="panel__section">
+          <h3>Details</h3>
 
-        <label htmlFor="ed-category">Category</label>
-        <select
-          id="ed-category"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          required
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          <label htmlFor="ed-category">Category</label>
+          <select
+            id="ed-category"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-        <label htmlFor="ed-name">Name</label>
-        <input id="ed-name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <label htmlFor="ed-name">Name</label>
+          <input id="ed-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
-        <label htmlFor="ed-description">Description</label>
-        <textarea
-          id="ed-description"
-          rows={2}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+          <label htmlFor="ed-description">Description</label>
+          <textarea
+            id="ed-description"
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
 
-        {/* Base price is only set here on create; afterwards it belongs to the pricing section. */}
-        {isNew && (
+          {/* Base price is only set here on create; afterwards it belongs to the pricing section. */}
+          {isNew && (
+            <>
+              <label htmlFor="ed-price">Price ($)</label>
+              <input
+                id="ed-price"
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="12.50"
+                required
+              />
+            </>
+          )}
+
+          {/*
+            aria-disabled, not disabled. This button is focused at the moment it is pressed, and
+            a focused element that becomes `disabled` has focus taken from it and dropped on
+            <body> — so saving would throw a keyboard user out of the dialog to the top of the
+            document. The guard in handleDetailsSubmit does the blocking instead.
+          */}
+          <button type="submit" aria-disabled={busy}>
+            {isNew ? 'Create item' : 'Save details'}
+          </button>
+        </form>
+
+        {!isNew && (
           <>
-            <label htmlFor="ed-price">Price ($)</label>
-            <input
-              id="ed-price"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="12.50"
-              required
-            />
+            <PricingSection token={token} item={item} run={run} />
+            <ImageSection token={token} item={item} run={run} />
           </>
         )}
-
-        <button type="submit" disabled={busy}>
-          {isNew ? 'Create item' : 'Save details'}
-        </button>
-      </form>
-
-      {!isNew && (
-        <>
-          <PricingSection token={token} item={item} run={run} />
-          <ImageSection token={token} item={item} run={run} />
-        </>
-      )}
-    </div>
+      </div>
+    </dialog>
   );
 }
 
