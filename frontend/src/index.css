@@ -260,7 +260,7 @@ h3 {
   isolation: isolate;
   /* contains the logo's multiply blend — see .brand__mark */
   /* background: var(--accent); */
-  color: var(--on-accent);
+  /* color: var(--on-accent); */
   font-weight: 900;
   font-size: 1rem;
   white-space: nowrap;

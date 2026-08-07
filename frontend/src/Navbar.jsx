@@ -93,7 +93,7 @@ function Navbar({ user, current, onNavigate, onLogout }) {
         which is why the name is set as text.
       */}
       <span className="brand">
-        <img className="brand__mark" src="/logo-mark.webp" alt="" aria-hidden="true" width="96" height="96" />
+
         <span className="brand__name">Rokushichi</span>
       </span>
 
