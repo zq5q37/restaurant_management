@@ -124,8 +124,25 @@ app.get('/api/message', (req, res) => {
 
 **Yesterday:** -
 
-**Today:** -
+**Today:**
+- Responsive shell (`Navbar.jsx`, `index.css`): bar folds into a hamburger panel under 915px
+  - header height measured with a `ResizeObserver` into `--app-header-h` rather than hardcoded — the fixed bar sizes itself in rem, so a written-down offset drifts on a font swap or a new link
+  - panel closes on Escape, outside pointer, link follow, and on widening past the breakpoint
+- 一品ガチャ dish gacha (`backend/menu/gacha.js`, `routes/gacha.js`, `analytics/queries.js`, `Gacha.jsx`, `gacha.css`)
+  - a capsule machine on the menu page, weighted toward dishes that are both profitable **and** overlooked — the first thing to make `cost_cents` and the 30 days of `menu_item_views` change what a customer sees
+  - `quality = 0.5·margin + 0.5·overlooked`, `weight = 0.15 + 0.85·quality²`; squaring is what turns the sum into an AND, the floor is what keeps every dish drawable
+  - margin off the *effective* price (a special is already a promotion); overlooked is `1/log₂(views+2)`, so a zero-view dish scores exactly 1.0 with no branch
+  - a draw is an impression, not a view — nothing is written unless the user clicks through, else the machine would count its own promotion as interest
+  - `publicItem()` rebuilds the response from a named field list instead of spreading the row, so `cost_cents` and every score stop at the boundary
+  - `npm run gacha-weights`: dumps the weight table, draws 100k times through the real selector under a seeded RNG, exits non-zero if the merchandising claim fails (last run 1.96× / 1.65×, max |Δ| 0.12pp)
+- Item editor rebuilt as a modal `<dialog>`, matching the shift editor's shape
+- Docs: `docs/gacha.md` + `.html`, gacha section in `api-endpoints.md`, `demo-run-sheet.html` (15-minute demo script), architecture diagram PDF
 
 **Blockers:** -
 
-**Challenges & resolutions:** -
+**Challenges & resolutions:**
+- the pool query needs a `LEFT JOIN` with the date bound in the **join predicate** — under an `INNER JOIN`, or with the bound in `WHERE`, the zero-view dishes the feature exists to promote silently vanish from the pool
+- `M × O` as the blend zeroes any dish at the bottom of either min-max scale, and min-max guarantees one dish sits there => `quality²` instead, which enforces AND without the artefact
+- a nullable `cost_cents` can't be treated as 0 (reports the dish as pure profit and promotes it hardest) nor exclude the dish (a data-entry gap would edit the dining room) => median of the priced dishes
+- exposing `?seed=` for reproducibility would let anyone sweep seeds and read the menu's margin ranking off the machine => the RNG is injected and the bench script is the only seeded caller
+- a menu opened narrow and then widened past the breakpoint left a hamburger that no longer exists reporting itself expanded => `matchMedia` change listener drops the open state
