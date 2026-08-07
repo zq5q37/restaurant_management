@@ -1,0 +1,671 @@
+<title>一品ガチャ — how the dish gacha works</title>
+
+<style>
+  /*
+   * Light only, deliberately — the tokens are Rokushichi's "Cat Cafe" theme from
+   * frontend/src/index.css, and there is no dark counterpart here on purpose. This page is
+   * read on a projector and printed; the weight field in the map is a gradient from the page
+   * ground up to the lantern amber, and it reads far better rising out of paper than out of
+   * black. `color-scheme: light` keeps scrollbars and form chrome in step even when the
+   * reader's OS is dark.
+   */
+  :root {
+    color-scheme: light;
+    --bg: #f6f4ef; --surface: #fffefb; --surface-2: #e8e4da; --band: #fbf3e2;
+    --line: #ddd8ce; --line-strong: #c9c2b4;
+    --text: #14130f; --muted: #6b6459; --faint: #6f6958;
+    --accent: #e0a32e; --accent-text: #8a5a12; --accent-dim: #c98f52;
+    --sign: #a82f16; --leaf: #3f6b33; --lamp: #4e6672;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    --jp: 'Yu Mincho', 'Hiragino Mincho ProN', 'MS Mincho', serif;
+    --mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 54rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+  h1, h2, h3 { margin: 0; font-weight: 900; letter-spacing: -0.02em; text-wrap: balance; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 0.95rem; }
+  p { margin: 0; }
+  .kicker {
+    font-family: var(--jp); font-size: 0.8rem; letter-spacing: 0.3em;
+    color: var(--accent-text); margin-bottom: 0.4rem;
+  }
+  .lede { color: var(--muted); margin-top: 0.6rem; }
+
+  section { border-top: 1px solid var(--line); padding: 2.25rem 0 0; margin-top: 2.25rem; }
+  header { padding-bottom: 0.5rem; }
+  .step {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--faint); margin-bottom: 0.3rem;
+  }
+  .note { color: var(--muted); font-size: 0.94rem; margin-top: 0.9rem; }
+  .caption {
+    color: var(--faint); font-size: 0.8rem; margin-top: 0.6rem;
+    padding-left: 0.75rem; border-left: 2px solid var(--line-strong);
+  }
+  code, .path {
+    font-family: var(--mono); font-size: 0.85em; background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 3px; padding: 0.05em 0.35em;
+  }
+  b.hl { color: var(--accent-text); }
+
+  /* ---- pipeline ---- */
+  .pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.4rem; margin-top: 1.2rem; }
+  .stage {
+    flex: 1 1 8rem; min-width: 8rem; background: var(--surface);
+    border: 1px solid var(--line); border-top: 3px solid var(--accent-dim);
+    border-radius: 3px; padding: 0.6rem 0.7rem;
+  }
+  .stage h3 { font-family: var(--mono); font-size: 0.76rem; font-weight: 700; letter-spacing: 0; }
+  .stage p { font-size: 0.76rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.45; }
+  .stage.out { border-top-color: var(--leaf); }
+  .stage.stop { border-top-color: var(--sign); }
+  .arw { align-self: center; color: var(--line-strong); font-size: 1.1rem; }
+
+  /* ---- bar rows ---- */
+  .bars { margin-top: 1.2rem; display: grid; gap: 0.35rem; }
+  .row { display: grid; grid-template-columns: 11rem 1fr 3.2rem; align-items: center; gap: 0.6rem; }
+  .row .nm { font-size: 0.8rem; text-align: right; color: var(--muted); }
+  .row .track { background: var(--surface-2); border-radius: 2px; height: 1.15rem; position: relative; overflow: hidden; }
+  .row .fill { height: 100%; border-radius: 2px; }
+  .row .val {
+    font-family: var(--mono); font-size: 0.76rem; font-variant-numeric: tabular-nums;
+    color: var(--muted); text-align: right;
+  }
+  .fill--m { background: var(--accent); }
+  .fill--o { background: var(--lamp); }
+  .fill--w { background: var(--accent); }
+  .legend { display: flex; gap: 1.2rem; margin-top: 0.9rem; font-size: 0.78rem; color: var(--muted); }
+  .sw { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-right: 0.35rem; vertical-align: -1px; }
+
+  /* ---- canvas map ---- */
+  .mapwrap { position: relative; margin-top: 1.2rem; }
+  canvas { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 3px; }
+  .dot {
+    position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+    border-radius: 50%; background: var(--text); border: 2px solid var(--bg);
+    pointer-events: none;
+  }
+  .dotlbl {
+    position: absolute; font-size: 0.7rem; font-family: var(--mono);
+    color: var(--text); white-space: nowrap; pointer-events: none;
+    text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg);
+  }
+  .axis { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--faint); margin-top: 0.35rem; }
+
+  /* ---- roulette strip ---- */
+  .strip { display: flex; height: 3.2rem; margin-top: 1.2rem; border-radius: 3px; overflow: hidden; border: 1px solid var(--line-strong); }
+  .seg {
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 0.66rem; color: var(--bg);
+    border-right: 1px solid var(--bg); overflow: hidden; white-space: nowrap;
+  }
+  .seg:last-child { border-right: 0; }
+  .ruler { position: relative; height: 1.6rem; margin-top: 0.2rem; }
+  .tick { position: absolute; top: 0; font-size: 0.68rem; color: var(--faint); transform: translateX(-50%); font-family: var(--mono); }
+  .tick::before { content: ''; position: absolute; left: 50%; top: -0.35rem; width: 1px; height: 0.3rem; background: var(--line-strong); }
+
+  /* ---- two-column keep/discard ---- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: 1.2rem; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 0.85rem 0.95rem; }
+  .card.keep { border-left: 3px solid var(--leaf); }
+  .card.drop { border-left: 3px solid var(--sign); }
+  .card h3 { font-size: 0.85rem; margin-bottom: 0.5rem; }
+  .card ul { margin: 0; padding-left: 1.05rem; font-family: var(--mono); font-size: 0.76rem; color: var(--muted); }
+  .card li { margin-bottom: 0.15rem; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.84rem; margin-top: 1rem; }
+  th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+  td.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (max-width: 620px) {
+    .row { grid-template-columns: 7rem 1fr 2.8rem; }
+    .row .nm { font-size: 0.72rem; }
+    .cols { grid-template-columns: 1fr; }
+    .arw { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="kicker" lang="ja">一品ガチャ</p>
+  <h1>How the dish gacha works</h1>
+  <p class="lede">
+    Turn the dial, get one dish. The draw is weighted toward dishes that are
+    <b class="hl">both profitable and overlooked</b> — so it is a merchandising tool wearing a
+    capsule machine. Every number on this page is real, from
+    <code>npm run gacha-weights</code> against the seeded menu.
+  </p>
+</header>
+
+<section>
+  <p class="step">the shape of it</p>
+  <h2>One request, four stages</h2>
+
+  <div class="pipe">
+    <div class="stage">
+      <h3>1 · pool</h3>
+      <p>Every <b>available</b> dish, plus its view count over the last 30 days.</p>
+    </div>
+    <div class="arw">→</div>
+    <div class="stage">
+      <h3>2 · score</h3>
+      <p>Two numbers per dish: how profitable, how overlooked. Blended into one weight.</p>
+    </div>
+    <div class="arw">→</div>
+    <div class="stage">
+      <h3>3 · draw</h3>
+      <p>Pick one, with probability proportional to its weight.</p>
+    </div>
+    <div class="arw">→</div>
+    <div class="stage out">
+      <h3>4 · strip</h3>
+      <p>Rebuild the response from a named field list. Cost and scores stay behind.</p>
+    </div>
+  </div>
+
+  <p class="caption">
+    Stage 1 is the only SQL. Stages 2 and 3 are pure arithmetic in
+    <span class="path">backend/menu/gacha.js</span> — no database, which is why the whole thing can
+    be re-run offline by the verification script.
+  </p>
+</section>
+
+<section>
+  <p class="step">stage 2a</p>
+  <h2>Signal one — margin</h2>
+  <p class="note">
+    What the shop actually banks on a plate: <b>the price the customer pays minus the cost</b>. In
+    cents, not percent, because rent is paid in cents — Sukiyaki is only a 34% margin but earns
+    950¢ a serving, more than anything else on the board.
+  </p>
+  <p class="note">
+    It uses the <b class="hl">effective</b> price, so Curry Udon counts at $9.99 (26% off) rather
+    than its $13.50 list. Otherwise the machine would push discounted dishes hardest — backwards,
+    since a special is already a promotion. That is why it ends up last.
+  </p>
+  <div class="bars" id="barsM"></div>
+  <p class="caption">Scaled across the pool: best margin = 1.00, worst = 0.00.</p>
+</section>
+
+<section>
+  <p class="step">stage 2b</p>
+  <h2>Signal two — how overlooked</h2>
+  <p class="note">
+    Views over 30 days, inverted and log-damped:
+    <code>1 / log₂(views + 2)</code>. The <code>+ 2</code> is what makes a dish with zero views
+    score exactly 1.00 without any special case — and the log stops one runaway dish from
+    flattening everything else into noise.
+  </p>
+  <div class="bars" id="barsO"></div>
+  <p class="caption">
+    Curry Rice is the most-viewed dish on the menu, so it scores 0.00 here — the least overlooked
+    thing there is.
+  </p>
+</section>
+
+<section>
+  <p class="step">stage 2c · the core idea</p>
+  <h2>The map</h2>
+  <p class="note">
+    Put both scores on one chart. Profitable to the right, overlooked upward — so the dishes worth
+    promoting are in the <b class="hl">top-right</b>. The shading is the weight each position earns.
+  </p>
+
+  <div class="mapwrap" id="mapwrap">
+    <canvas id="map" width="720" height="500" role="img"
+      aria-label="Scatter plot of the eight available dishes. Horizontal axis is margin score, vertical axis is overlooked score. Background shading shows the weight earned at each position, brightest in the top-right corner. The full figures are in the table below."></canvas>
+  </div>
+  <div class="axis"><span>← low margin</span><span>margin score</span><span>high margin →</span></div>
+
+  <p class="note" style="margin-top:1.4rem;">
+    The pale diagonals are lines of <b>equal weight</b>. They run at 45° because the two signals are
+    simply averaged — so a point can trade margin for obscurity one-for-one and land on the same
+    line.
+  </p>
+  <p class="note">
+    But look at the <b class="hl">spacing</b>: the bands crowd together toward the top-right. That
+    crowding is the whole trick, and it comes from squaring the average.
+  </p>
+</section>
+
+<section>
+  <p class="step">stage 2d</p>
+  <h2>Why it is squared</h2>
+  <p class="note">
+    Average the two scores and you get <code>quality</code>. A dish can reach 0.5 by being
+    <i>perfect</i> on one axis and <i>worst</i> on the other — which is not what we want to promote.
+    Squaring bends the curve so the middle is punished harder than the top:
+  </p>
+
+  <div class="scroll">
+    <svg viewBox="0 0 620 300" width="100%" style="max-width:620px;margin-top:1rem;" role="img"
+      aria-label="Weight as a function of quality. A straight dashed line shows a plain average; a curve shows the squared version, which sits below it everywhere and rises steeply only near the top. Sukiyaki and Tofu Udon are marked.">
+      <line x1="60" y1="250" x2="580" y2="250" stroke="var(--line-strong)"/>
+      <line x1="60" y1="30" x2="60" y2="250" stroke="var(--line-strong)"/>
+      <line x1="60" y1="217" x2="580" y2="217" stroke="var(--line)" stroke-dasharray="3 3"/>
+      <text x="52" y="221" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--mono)">0.15</text>
+      <text x="52" y="34" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--mono)">1.00</text>
+      <text x="60" y="268" font-size="10" fill="var(--faint)" font-family="var(--mono)">quality 0</text>
+      <text x="580" y="268" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--mono)">1</text>
+      <text x="16" y="140" font-size="10" fill="var(--faint)" font-family="var(--mono)" transform="rotate(-90 16 140)" text-anchor="middle">weight</text>
+
+      <line x1="60" y1="217" x2="580" y2="30" stroke="var(--lamp)" stroke-dasharray="5 4" stroke-width="1.5"/>
+      <text x="336" y="106" font-size="10.5" fill="var(--lamp)">plain average</text>
+
+      <path id="curve" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="332" y="190" font-size="10.5" fill="var(--accent-text)">squared — what we use</text>
+
+      <g id="curvePts"></g>
+    </svg>
+  </div>
+
+  <p class="note" style="margin-top:1.2rem;">
+    <b>Sukiyaki</b> has the best margin on the whole menu, but it is the second-most-viewed dish.
+    <b>Tofu Udon</b> is merely good at both. On a plain average Sukiyaki is only 10% behind — after
+    squaring it is <b class="hl">23% behind</b>. One exponent buys the word “and”.
+  </p>
+
+  <p class="note">
+    The curve also never reaches zero: it starts at <b class="hl">0.15</b>. That floor is what keeps
+    every dish drawable — without it the worst dish would be impossible, and the machine would stop
+    being a gacha and start being a vending machine.
+  </p>
+</section>
+
+<section>
+  <p class="step">stage 3</p>
+  <h2>The draw</h2>
+  <p class="note">
+    Lay every weight end to end and pick a point at random along the whole strip. Whichever segment
+    you land in is the dish. Wider segment, likelier dish — that is the entire selection algorithm.
+  </p>
+
+  <div class="strip" id="strip"></div>
+  <div class="ruler" id="ruler"></div>
+
+  <p class="caption">
+    If every dish were equally likely each segment would be 12.5% wide. Compare: the three quiet,
+    profitable dishes take <b>53%</b> between them, while Curry Rice — second-best margin, but the
+    most-viewed dish on the menu — is pushed down to <b>9.7%</b>.
+  </p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Dish</th><th style="text-align:right">Margin ¢</th><th style="text-align:right">Views</th><th style="text-align:right">Margin</th><th style="text-align:right">Overlooked</th><th style="text-align:right">Weight</th><th style="text-align:right">Draw</th></tr>
+      </thead>
+      <tbody id="tbl"></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="step">stage 4</p>
+  <h2>What leaves the server</h2>
+  <p class="note">
+    All that reasoning is the shop's business. The response is rebuilt from an explicit list of
+    fields rather than by copying the row, because <b>the only reliable place to stop a column is
+    before it leaves</b>.
+  </p>
+
+  <div class="cols">
+    <div class="card keep">
+      <h3>Goes to the browser</h3>
+      <ul>
+        <li>name, description</li>
+        <li>price_cents</li>
+        <li>effective_price_cents</li>
+        <li>category_name</li>
+        <li>image_path</li>
+        <li>pool_size</li>
+      </ul>
+    </div>
+    <div class="card drop">
+      <h3>Never leaves the process</h3>
+      <ul>
+        <li>cost_cents</li>
+        <li>views</li>
+        <li>margin_cents</li>
+        <li>margin_score</li>
+        <li>overlooked_score</li>
+        <li>quality, weight</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="caption">
+    The client is told <i>which</i> dish came out, and nothing about why. There is no
+    <code>?seed=</code> parameter either — a caller who could replay draws could read the margin
+    ranking of the menu straight off the machine.
+  </p>
+</section>
+
+<section>
+  <p class="step">the reason it keeps working</p>
+  <h2>A draw is not a view</h2>
+
+  <div class="scroll">
+    <svg viewBox="0 0 640 200" width="100%" style="max-width:640px;margin-top:1rem;" role="img"
+      aria-label="A cycle: the machine promotes a quiet dish, someone opens it, a real view is recorded, its overlooked score falls, its weight falls, and the machine moves on to the next undiscovered dish.">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--accent-dim)"/>
+        </marker>
+      </defs>
+      <g font-size="11" font-family="var(--mono)" fill="var(--text)">
+        <rect x="8" y="76" width="118" height="46" rx="4" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="67" y="95" text-anchor="middle">machine</text>
+        <text x="67" y="110" text-anchor="middle" fill="var(--muted)">promotes it</text>
+
+        <rect x="176" y="76" width="118" height="46" rx="4" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="235" y="95" text-anchor="middle">someone</text>
+        <text x="235" y="110" text-anchor="middle" fill="var(--muted)">opens it</text>
+
+        <rect x="344" y="76" width="118" height="46" rx="4" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="403" y="95" text-anchor="middle">view recorded</text>
+        <text x="403" y="110" text-anchor="middle" fill="var(--muted)">now less overlooked</text>
+
+        <rect x="512" y="76" width="120" height="46" rx="4" fill="var(--surface)" stroke="var(--line)"/>
+        <text x="572" y="95" text-anchor="middle">weight falls</text>
+        <text x="572" y="110" text-anchor="middle" fill="var(--muted)">moves on</text>
+      </g>
+      <line x1="126" y1="99" x2="170" y2="99" stroke="var(--accent-dim)" marker-end="url(#ar)"/>
+      <line x1="294" y1="99" x2="338" y2="99" stroke="var(--accent-dim)" marker-end="url(#ar)"/>
+      <line x1="462" y1="99" x2="506" y2="99" stroke="var(--accent-dim)" marker-end="url(#ar)"/>
+      <path d="M572 76 V 40 H 67 V 70" fill="none" stroke="var(--accent-dim)" marker-end="url(#ar)"/>
+      <text x="320" y="32" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="var(--mono)">next undiscovered dish</text>
+      <path d="M235 128 V 165 H 67 V 128" fill="none" stroke="var(--sign)" stroke-dasharray="4 3"/>
+      <text x="320" y="180" text-anchor="middle" font-size="10.5" fill="var(--sign)" font-family="var(--mono)">the draw itself writes nothing — only this click does</text>
+    </svg>
+  </div>
+
+  <p class="note">
+    If turning the dial counted as a view, the machine would promote a quiet dish, count
+    <i>its own promotion</i> as interest, and demote it again — with nobody having looked at
+    anything. The counter would be measuring the machine instead of the room.
+  </p>
+  <p class="note">
+    So the draw is a read with <code>Cache-Control: no-store</code> and no write at all. The view is
+    recorded only when someone clicks <b>See dish</b>, through the same endpoint the menu already
+    uses. You can check it: run <code>npm run inspect-db</code>, draw ten times, run it again — the
+    count is unchanged. Click through once and it goes up by exactly one.
+  </p>
+</section>
+
+<section>
+  <p class="step">the awkward case</p>
+  <h2>One dish has no cost recorded</h2>
+  <p class="note">
+    <b>Sesame Sauce Salad</b> has no <code>cost_cents</code>, so its margin cannot be computed — but
+    the draw still has to give it a weight. Three options, and only one is honest:
+  </p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Option</th><th>What happens</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Leave it out</td>
+          <td>The machine holds 7 dishes while the menu shows 8</td>
+          <td>A blank field in the office would quietly edit the dining room</td>
+        </tr>
+        <tr>
+          <td>Call the cost zero</td>
+          <td>Scores as pure profit — the best dish on the board</td>
+          <td>Promoted hardest for the worst reason</td>
+        </tr>
+        <tr>
+          <td><b>Score it at the median</b></td>
+          <td>Treated as a typical dish on this menu</td>
+          <td><b class="hl">Chosen</b> — as far as honesty goes when nobody has typed the number in</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="caption">
+    The median here is 0.265, which happens to land exactly on Sardine Ochazuke — which is why the
+    two share a point on the map above. The verification script prints which dishes are running on
+    this estimate, so the fix is obvious: enter the cost.
+  </p>
+</section>
+
+<section>
+  <p class="step">proving it</p>
+  <h2>The claim is tested, not asserted</h2>
+  <p class="note">
+    There is no test framework in this project. Instead the feature's claim is made falsifiable —
+    <code>npm run gacha-weights</code> prints the table above, then draws 100,000 times through the
+    real selector and compares what came out against what was predicted. Then it splits the menu at
+    both medians and checks the claim directly:
+  </p>
+  <pre style="margin-top:1rem;padding:0.9rem;background:var(--surface);border:1px solid var(--line);border-radius:3px;overflow-x:auto;font-family:var(--mono);font-size:0.8rem;line-height:1.6;">CLAIM  high-margin half draws 1.96x as often as its opposite   OK
+CLAIM  overlooked half draws 1.65x as often as its opposite    OK
+max |&#916;| = 0.12pp over 100,000 draws</pre>
+  <p class="caption">It exits non-zero if either ratio falls to 1. A green run is a real check, not a printout.</p>
+</section>
+
+</div>
+
+<script>
+  const DISHES = [
+    { n: 'Sesame Sauce Salad',   mc: null, v: 68,  m: 0.265, o: 1.000 },
+    { n: 'Sardine Ochazuke',     mc: 670,  v: 68,  m: 0.265, o: 1.000 },
+    { n: 'Tofu Udon',            mc: 810,  v: 110, m: 0.633, o: 0.622 },
+    { n: 'Sukiyaki',             mc: 950,  v: 246, m: 1.000, o: 0.129 },
+    { n: 'Japanese Curry Rice',  mc: 850,  v: 318, m: 0.738, o: 0.000 },
+    { n: 'Napa Cabbage Soup',    mc: 650,  v: 140, m: 0.213, o: 0.458 },
+    { n: 'Air-fried Chicken',    mc: 630,  v: 216, m: 0.160, o: 0.199 },
+    { n: 'Japanese Curry Udon',  mc: 569,  v: 178, m: 0.000, o: 0.310 },
+  ];
+
+  const FLOOR = 0.15, GAMMA = 2;
+  const weightOf = (q) => FLOOR + (1 - FLOOR) * Math.pow(q, GAMMA);
+
+  DISHES.forEach((d) => {
+    d.q = 0.5 * d.m + 0.5 * d.o;
+    d.w = weightOf(d.q);
+  });
+  const TOTAL = DISHES.reduce((s, d) => s + d.w, 0);
+  DISHES.forEach((d) => { d.p = d.w / TOTAL; });
+
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  /* ---- bar rows ---- */
+  function bars(el, key, cls) {
+    const sorted = [...DISHES].sort((a, b) => b[key] - a[key]);
+    el.innerHTML = sorted.map((d) => `
+      <div class="row">
+        <span class="nm">${d.n}</span>
+        <span class="track"><span class="fill ${cls}" style="width:${Math.max(d[key] * 100, 1.2)}%"></span></span>
+        <span class="val">${d[key].toFixed(3)}</span>
+      </div>`).join('');
+  }
+  bars(document.getElementById('barsM'), 'm', 'fill--m');
+  bars(document.getElementById('barsO'), 'o', 'fill--o');
+
+  /* ---- roulette strip ---- */
+  const strip = document.getElementById('strip');
+  const ruler = document.getElementById('ruler');
+  const byP = [...DISHES].sort((a, b) => b.p - a.p);
+  strip.innerHTML = byP.map((d, i) => {
+    const shade = 0.95 - i * 0.085;
+    return `<div class="seg" style="width:${d.p * 100}%;background:color-mix(in srgb, var(--accent) ${shade * 100}%, var(--bg))"
+      title="${d.n} — ${(d.p * 100).toFixed(1)}%">${d.p > 0.08 ? (d.p * 100).toFixed(1) + '%' : ''}</div>`;
+  }).join('');
+  let acc = 0;
+  ruler.innerHTML = byP.map((d) => {
+    const mid = acc + d.p / 2; acc += d.p;
+    return d.p > 0.085
+      ? `<span class="tick" style="left:${mid * 100}%">${d.n.split(' ')[0]}</span>` : '';
+  }).join('');
+
+  /* ---- table ---- */
+  document.getElementById('tbl').innerHTML = byP.map((d) => `
+    <tr>
+      <td>${d.n}</td>
+      <td class="n">${d.mc === null ? '—' : d.mc}</td>
+      <td class="n">${d.v}</td>
+      <td class="n">${d.m.toFixed(3)}</td>
+      <td class="n">${d.o.toFixed(3)}</td>
+      <td class="n">${d.w.toFixed(3)}</td>
+      <td class="n"><b>${(d.p * 100).toFixed(1)}%</b></td>
+    </tr>`).join('');
+
+  /* ---- the squaring curve ---- */
+  (function curve() {
+    const x0 = 60, x1 = 580, yTop = 30, yBot = 217; // y at weight 1.00 and 0.15
+    const px = (q) => x0 + q * (x1 - x0);
+    const py = (w) => yBot - ((w - FLOOR) / (1 - FLOOR)) * (yBot - yTop);
+    let d = '';
+    for (let i = 0; i <= 100; i++) {
+      const q = i / 100;
+      d += (i ? 'L' : 'M') + px(q).toFixed(1) + ' ' + py(weightOf(q)).toFixed(1) + ' ';
+    }
+    document.getElementById('curve').setAttribute('d', d);
+
+    // The two dishes sit ~30px apart on the curve, so the labels go to opposite sides rather
+    // than above and below — stacked, they overlap at any offset small enough to still read
+    // as attached to their own point.
+    const marks = [
+      { d: DISHES.find((x) => x.n === 'Sukiyaki'), label: 'Sukiyaki', side: 'end', dx: -9, dy: 4 },
+      { d: DISHES.find((x) => x.n === 'Tofu Udon'), label: 'Tofu Udon', side: 'start', dx: 9, dy: -3 },
+    ];
+    document.getElementById('curvePts').innerHTML = marks.map(({ d: dish, label, side, dx, dy }) => {
+      const cx = px(dish.q), cy = py(dish.w);
+      return `<circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--text)" stroke="var(--bg)" stroke-width="2"/>
+              <text x="${cx + dx}" y="${cy + dy}" text-anchor="${side}" font-size="10.5"
+                    font-family="var(--mono)" fill="var(--text)">${label} ${dish.w.toFixed(2)}</text>`;
+    }).join('');
+  })();
+
+  /* ---- the map: weight field + iso-weight diagonals + dishes ---- */
+  const cv = document.getElementById('map');
+  const wrap = document.getElementById('mapwrap');
+  const PAD = { l: 54, r: 18, t: 18, b: 44 };
+
+  function drawMap() {
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    const iw = W - PAD.l - PAD.r, ih = H - PAD.t - PAD.b;
+    ctx.clearRect(0, 0, W, H);
+
+    // Read the theme's own colours so the field belongs to whichever room we are in.
+    const probe = document.createElement('span');
+    probe.style.color = css('--accent');
+    document.body.appendChild(probe);
+    const acc = getComputedStyle(probe).color.match(/\d+/g).map(Number);
+    probe.style.color = css('--bg');
+    const bg = getComputedStyle(probe).color.match(/\d+/g).map(Number);
+    probe.remove();
+
+    const img = ctx.createImageData(iw, ih);
+    for (let py = 0; py < ih; py++) {
+      const o = 1 - py / (ih - 1);
+      for (let px = 0; px < iw; px++) {
+        const m = px / (iw - 1);
+        const w = weightOf(0.5 * m + 0.5 * o);
+        const t = (w - FLOOR) / (1 - FLOOR); // 0..1
+        const k = (py * iw + px) * 4;
+        img.data[k]     = bg[0] + (acc[0] - bg[0]) * t;
+        img.data[k + 1] = bg[1] + (acc[1] - bg[1]) * t;
+        img.data[k + 2] = bg[2] + (acc[2] - bg[2]) * t;
+        img.data[k + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, PAD.l, PAD.t);
+
+    // Iso-weight lines are diagonals, because quality is a plain average. Their SPACING is
+    // what squaring changes — evenly spaced weights sit closer together near the top right.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PAD.l, PAD.t, iw, ih);
+    ctx.clip();
+    // Deep ochre, not the page ground: the field runs from cream up to amber, so a light line
+    // is invisible over the low-weight corner and a dark one holds against both ends.
+    ctx.strokeStyle = css('--accent-text');
+    ctx.fillStyle = css('--accent-text');
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.font = '10px ui-monospace, monospace';
+    [0.25, 0.4, 0.55, 0.7, 0.85].forEach((w) => {
+      const q = Math.sqrt((w - FLOOR) / (1 - FLOOR)); // quality that yields this weight
+      const s = 2 * q; // m + o = 2q
+      const pt = (m, o) => [PAD.l + m * iw, PAD.t + (1 - o) * ih];
+      let a, b;
+      if (s <= 1) { a = pt(0, s); b = pt(s, 0); } else { a = pt(s - 1, 1); b = pt(1, s - 1); }
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+      // The lines stay faint; their labels do not, or the ones over the pale corner vanish.
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(w.toFixed(2), b[0] - 30, b[1] - 6);
+      ctx.globalAlpha = 0.3;
+    });
+    ctx.restore();
+
+    // frame + axis ticks
+    ctx.strokeStyle = css('--line-strong');
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(PAD.l + 0.5, PAD.t + 0.5, iw, ih);
+    ctx.fillStyle = css('--faint');
+    ctx.font = '11px ui-monospace, monospace';
+    ['0.00', '0.50', '1.00'].forEach((t, i) => {
+      ctx.fillText(t, PAD.l + (i / 2) * iw - 12, H - PAD.b + 16);
+      ctx.fillText(t, 8, PAD.t + (1 - i / 2) * ih + 4);
+    });
+    ctx.save();
+    ctx.translate(14, PAD.t + ih / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('overlooked score', -48, -22);
+    ctx.restore();
+  }
+
+  function placeDots() {
+    const iw = cv.clientWidth - (PAD.l + PAD.r) * (cv.clientWidth / cv.width);
+    const scale = cv.clientWidth / cv.width;
+    wrap.querySelectorAll('.dot,.dotlbl').forEach((n) => n.remove());
+
+    // Sesame and Sardine sit on the identical point — one marker, one shared label.
+    const shown = DISHES.filter((d) => d.n !== 'Sesame Sauce Salad');
+    shown.forEach((d) => {
+      const x = (PAD.l + d.m * (cv.width - PAD.l - PAD.r)) * scale;
+      const y = (PAD.t + (1 - d.o) * (cv.height - PAD.t - PAD.b)) * scale;
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.left = x + 'px'; dot.style.top = y + 'px';
+      wrap.appendChild(dot);
+
+      const lbl = document.createElement('span');
+      lbl.className = 'dotlbl';
+      const isTop = d.o > 0.9;
+      lbl.textContent = d.n === 'Sardine Ochazuke' ? 'Sardine + Sesame' : d.n;
+      lbl.style.left = (x + 10) + 'px';
+      lbl.style.top = (y + (isTop ? 2 : -16)) + 'px';
+      if (d.m > 0.7) { lbl.style.left = 'auto'; lbl.style.right = (cv.clientWidth - x + 10) + 'px'; }
+      wrap.appendChild(lbl);
+    });
+  }
+
+  // No theme listeners: the page is light-only by design (see the token block), so the field
+  // is painted once. Only the dot overlay has to follow the canvas as it is scaled by CSS.
+  drawMap();
+  placeDots();
+  addEventListener('resize', placeDots);
+</script>

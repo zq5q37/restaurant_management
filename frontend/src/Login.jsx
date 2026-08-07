@@ -58,7 +58,7 @@ function Login({ onSuccess }) {
 
         <form onSubmit={handleSubmit} className="signin__form">
           <h1 className="signin__title">Sign in</h1>
-          <p className="hint">Staff and guests use the same door.</p>
+          {/* <p className="hint">Staff and guests use the same door.</p>  */}
 
           <label htmlFor="email">Email</label>
           <input

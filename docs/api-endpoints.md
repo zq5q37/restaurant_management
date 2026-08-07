@@ -182,6 +182,49 @@ Images are served from `GET /api/images/:filename` **without authentication** �
 unguessable UUIDs, and requiring a bearer token would stop the browser loading them in `<img>`.
 Replacing or deleting an item's image removes the old file from disk.
 
+### `GET /api/gacha`
+
+One weighted dish recommendation — the capsule machine on the menu page. Any authenticated role;
+the response is identical for all four. How the weighting works, with diagrams:
+[gacha.html](gacha.html).
+
+| Param | Type | Notes |
+| ----- | ---- | ----- |
+| `category_id` | integer | Narrows the pool to one course. An id that matches nothing yields an empty pool, not a 404. |
+| `exclude` | integer | Id of the previous draw, so "Turn again" is a different capsule. Ignored when honouring it would empty the pool. |
+
+**200**
+
+```json
+{
+  "item": {
+    "id": 25, "category_id": 11, "category_name": "Noodles & Rice", "name": "Tofu Udon",
+    "price_cents": 1100, "effective_price_cents": 1100, "is_on_special": false,
+    "is_available": true, "image_path": "dcc4482c-dec7-48be-9a64-6301188fbec9.png"
+  },
+  "draw": { "pool_size": 8, "category_id": null, "repeated": false, "drawn_at": "2026-08-07 14:02:11" }
+}
+```
+
+| Status | When |
+| ------ | ---- |
+| 200 | A dish was drawn |
+| 200 | Nothing is available — `item` is `null` and `pool_size` is `0`. Not a 404: the endpoint answered correctly, and "every dish is off the board tonight" is a legitimate state of the menu. |
+| 400 | `category_id` or `exclude` is not an integer |
+| 401 | Missing or invalid token |
+
+`item` is the same shape `GET /api/menu-items/:id` returns, so a client needs no second mapping —
+**except** that `cost_cents` is absent. The response is built from an explicit field list rather
+than by spreading the row, because cost is an input to the weighting and must not leave the process.
+
+A one-dish course with that dish excluded returns it anyway, flagged `"repeated": true`, rather than
+returning nothing.
+
+Sends `Cache-Control: no-store`. It is a `GET` because **nothing is written** — a draw is an
+impression, not a view, so it deliberately does not record one. The view is recorded only if the
+user clicks through to the dish, which goes through `GET /api/menu-items/:id` as usual. A `POST`
+would imply a side effect that does not happen.
+
 ## Scheduling
 
 All require `Authorization: Bearer <token>`. Weekdays are ISO-8601 (1 = Monday … 7 = Sunday);
