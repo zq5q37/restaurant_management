@@ -45,24 +45,31 @@
   --faint: #8b8172;
 
   /* accent: the lantern. One colour, three jobs. */
-  --accent: #e8a24c;          /* filled fields: buttons, active chips, bars */
-  --on-accent: #17120b;       /* text on top of --accent — 8.5:1 */
-  --accent-text: #e8a24c;     /* accent as text on --bg — 9.5:1 */
-  --accent-dim: #a86f28;      /* accent as a rule or ring */
+  --accent: #e8a24c;
+  /* filled fields: buttons, active chips, bars */
+  --on-accent: #17120b;
+  /* text on top of --accent — 8.5:1 */
+  --accent-text: #e8a24c;
+  /* accent as text on --bg — 9.5:1 */
+  --accent-dim: #a86f28;
+  /* accent as a rule or ring */
   --focus: #e8a24c;
 
   /* status */
-  --sign: #b93a22;            /* shop signage red: errors, destructive, understaffed */
+  --sign: #b93a22;
+  /* shop signage red: errors, destructive, understaffed */
   --sign-soft: #2a1712;
   --sign-border: #4a241a;
   --sign-text: #eda78d;
   --on-sign: #ffffff;
 
-  --lamp: #7e9aa6;            /* cold street lamps: closed, off the menu, unknown */
+  --lamp: #7e9aa6;
+  /* cold street lamps: closed, off the menu, unknown */
   --lamp-soft: #1c262a;
   --lamp-border: #33454d;
 
-  --leaf: #6f9464;            /* the shop's plants: success */
+  --leaf: #6f9464;
+  /* the shop's plants: success */
   --leaf-soft: #182116;
   --leaf-border: #2c3d28;
 
@@ -111,7 +118,8 @@
   --surface: #fffefb;
   --surface-2: #e8e4da;
   --field-bg: #fffefb;
-  --band-lit: #fbf3e2;          /* a wash of the hammock mustard */
+  --band-lit: #fbf3e2;
+  /* a wash of the hammock mustard */
 
   /* lines — grout */
   --line: #ddd8ce;
@@ -129,9 +137,11 @@
    * a field but never text; the deep ochre of the wood in shadow carries the accent wherever
    * it has to be read.
    */
-  --accent: #e0a32e;            /* field — 8.2:1 with --on-accent on top */
+  --accent: #e0a32e;
+  /* field — 8.2:1 with --on-accent on top */
   --on-accent: #14130f;
-  --accent-text: #8a5a12;       /* accent as text — 5.8:1 */
+  --accent-text: #8a5a12;
+  /* accent as text — 5.8:1 */
   --accent-dim: #c98f52;
   --focus: #8a5a12;
 
@@ -217,10 +227,24 @@ h3 {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* Reserves the fixed bar's row, since it is out of flow. Navbar measures the bar and
+     publishes the height here; the fallback covers the signed-out screens, which have no
+     header to clear. */
+  padding-top: var(--app-header-h, 0px);
 }
 
-/* The top command bar is the only chrome in the app. */
+/* The top command bar is the only chrome in the app, and it stays put while the page moves
+   under it — on the long screens (a full week of shifts, the whole menu) the section links
+   and Log out are otherwise a scroll away from wherever you happen to be.
+
+   z-index only has to beat the page: modal dialogs are opened with showModal(), which puts
+   them in the browser's top layer, above every stacking context on the page regardless. */
 .app-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10;
   display: flex;
   align-items: stretch;
   flex-wrap: wrap;
@@ -233,8 +257,9 @@ h3 {
   align-items: center;
   gap: 0.55rem;
   padding: 0 1.25rem;
-  isolation: isolate; /* contains the logo's multiply blend — see .brand__mark */
-  background: var(--accent);
+  isolation: isolate;
+  /* contains the logo's multiply blend — see .brand__mark */
+  /* background: var(--accent); */
   color: var(--on-accent);
   font-weight: 900;
   font-size: 1rem;
@@ -270,6 +295,7 @@ h3 {
 
 .app-nav button {
   display: flex;
+  justify-content: end;
   align-items: center;
   height: 100%;
   margin: 0;
@@ -299,6 +325,7 @@ h3 {
 
 .app-user {
   display: flex;
+  justify-content: end;
   align-items: center;
   gap: 0.85rem;
   padding: 0 1.25rem;
@@ -327,6 +354,51 @@ h3 {
   background: none;
   color: var(--accent-text);
   filter: none;
+}
+
+/*
+ * `display: contents` on a wide screen: the nav and the identity block go on being direct
+ * flex children of the header, so grouping them for the hamburger costs the full-width bar
+ * nothing. The collapsed layout gives this wrapper a box back.
+ */
+.app-menu {
+  display: contents;
+}
+
+/* Both of these belong to the collapsed header; the media query below is what shows them. */
+.nav-toggle {
+  display: none;
+}
+
+.nav-toggle__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+}
+
+/* The bars fold into the close cross: the outer two meet in the middle and cross, the
+   middle one retracts into them. Two transforms and an opacity, as with the theme toggle. */
+.nav-toggle__bar {
+  transform-box: view-box;
+  transform-origin: center;
+  transition:
+    transform 260ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 160ms linear;
+}
+
+[data-menu-open='true'] .nav-toggle__bar--top {
+  transform: translateY(5px) rotate(45deg);
+}
+
+[data-menu-open='true'] .nav-toggle__bar--mid {
+  opacity: 0;
+  transform: scaleX(0.4);
+}
+
+[data-menu-open='true'] .nav-toggle__bar--end {
+  transform: translateY(-5px) rotate(-45deg);
 }
 
 .app-main {
@@ -870,7 +942,7 @@ button:disabled {
   max-width: 22rem;
 }
 
-.panel__section > button {
+.panel__section>button {
   margin-top: 0.75rem;
 }
 
@@ -1048,33 +1120,98 @@ button:disabled {
 
 /* ------------------------------------------------------------ responsive --- */
 
-@media (max-width: 640px) {
-  :root {
-    --gutter: 1.1rem;
-  }
+/*
+ * The header collapses earlier than the page does, so it gets its own breakpoint. Five
+ * section links, the name, the role and Log out need more room than a column of cards does,
+ * and they start colliding around here — well before the content itself is under pressure.
+ *
+ * Keep this in step with COLLAPSED in Navbar.jsx, which drops the open state when the layout
+ * stops being the collapsed one.
+ */
+@media (max-width: 915px) {
 
+  /*
+   * The bar folds to one row — brand, then the hamburger hard right — and everything else
+   * moves into the panel it opens. A row of five links scrolled sideways, which is what was
+   * here before, hides whichever sections do not fit and gives no sign that they exist.
+   */
   .app-header {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 
+  /* Its own vertical padding now that the row centres rather than stretches its children. */
   .brand {
     padding: 0.65rem 1.1rem;
   }
 
+  .nav-toggle {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    /* `auto` is what justifies it right: the brand sizes to its content, this takes the rest. */
+    margin: 0 1.1rem 0 auto;
+    padding: 0;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius);
+    background: var(--field-bg);
+    color: var(--muted);
+  }
+
+  .nav-toggle:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--field-bg);
+    color: var(--accent-text);
+    filter: none;
+  }
+
+  /* Full-basis, so it wraps onto its own line under the bar. The header is fixed, so this
+     hangs over the page rather than displacing it — hence the chrome background, which is
+     inherited from the header and has to stay opaque, and the tap-outside-to-close in
+     Navbar.jsx that an overlay panel needs and an in-flow one does not. */
+  .app-menu {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    border-top: 1px solid var(--line);
+  }
+
+  .app-header[data-menu-open='true'] .app-menu {
+    display: flex;
+  }
+
   .app-nav {
-    overflow-x: auto;
-    flex-wrap: nowrap;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .app-nav button {
+    padding: 0.8rem 1.1rem;
+    /* The current-section marker moves to the leading edge: a rule under a full-width row
+       reads as a divider between links rather than as a mark on one of them. */
+    border-bottom: 0;
+    border-left: 3px solid transparent;
     white-space: nowrap;
+    /* text-align: right; */
+  }
+
+  .app-nav button[aria-current='page'] {
+    border-left-color: var(--accent);
   }
 
   .app-user {
     margin-left: 0;
     padding: 0.6rem 1.1rem;
     border-top: 1px solid var(--line);
+  }
+}
+
+/* The page's own breakpoint: one column, tighter gutters. Separate from the header's above,
+   because the two run out of room at different widths. */
+@media (max-width: 640px) {
+  :root {
+    --gutter: 1.1rem;
   }
 
   .page-head,
