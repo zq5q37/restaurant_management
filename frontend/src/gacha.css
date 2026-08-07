@@ -1,0 +1,631 @@
+/*
+ * 一品ガチャ — the capsule machine on the menu page.
+ *
+ * Adapted from wheatup's gachapon pen: https://codepen.io/wheatup/pen/BawKVYe
+ * Same debt as ThemeToggle.jsx owes 21st.dev, recorded for the same reason.
+ *
+ * TAKEN, because they are better than the obvious versions: the WHOLE MACHINE shakes rather
+ * than one capsule rattling (the machine moving is what sells it); the drop is a damped bounce
+ * of decreasing amplitude AND duration rather than a single fall; the capsule opens by
+ * rubber-banding — squash and stretch of rising amplitude until it bursts — rather than two
+ * halves swinging apart; and the prize arrives on an overshoot.
+ *
+ * Above all, the pen's pure-CSS capsule: a circle with `overflow: hidden` whose ::after is a
+ * 200%-size circle with `border: inherit`, offset so its bordered top edge crosses the
+ * parent's middle. The inherited border draws the seam. Two hemispheres, no image. See
+ * .gacha__ball.
+ *
+ * REBUILT RATHER THAN COPIED, in every case for a reason:
+ *
+ *   - GSAP. The pen composes its choreography imperatively with gsap.timeline(), plus
+ *     RoughEase/Power0 for the jitter. ThemeToggle.jsx already settled this question for this
+ *     project — "pulling in a utility-class framework and an animation runtime for one button
+ *     is a poor trade" — and rebuilt its behaviour natively. Every beat below is a keyframe
+ *     list, so the runtime buys nothing here either.
+ *   - The eight images (gotcha.svg, handle.svg, point.png, shine.png, bg.jpg, prize1-4.png),
+ *     hot-linked from assets.codepen.io. Someone else's art on someone else's bandwidth. The
+ *     machine is drawn in CSS instead.
+ *   - Every literal colour. The pen's palette is pinks and purples; this one is built from the
+ *     theme tokens, so it works in Lantern Alley and Cat Cafe alike. See below.
+ *   - vh units and the full-screen one-shot model — the pen fills the viewport and deletes its
+ *     own machine at the end. This is a panel on a page that gets turned again and again.
+ *   - The pen's 48-stacked-text-shadow sticker outline. It belongs to its cartoon register,
+ *     not to a menu set in Zen Kaku Gothic.
+ *   - The rAF confetti physics sim (128 nodes, gravity integration, its own animation loop).
+ *     Fourteen spans on one shared keyframe read the same at this size and leave no loop to
+ *     clean up on unmount.
+ */
+
+/* ------------------------------------------------------------- the panel --- */
+
+/*
+ * The machine in the margin, the words beside it — the same two-column shape as .course, so
+ * the gacha reads as another band of the menu rather than a widget parked on top of it.
+ */
+.gacha {
+  /* display: grid; */
+  /* grid-template-columns: 12rem 1fr; */
+  /* gap: 1.5rem; */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 1.6rem var(--gutter);
+  border-bottom: 1px solid var(--line-2);
+  background: var(--band-lit);
+  box-shadow: inset 0 1px 0 var(--line-strong);
+}
+
+.gacha__kicker {
+  margin: 0;
+  color: var(--accent-text);
+  font-family: var(--jp);
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+}
+
+.gacha__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+}
+
+.gacha__sub {
+  margin: 0.3rem 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.gacha__dial {
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+}
+
+/* aria-disabled is not `disabled`, so the browser styles nothing for us. See Gacha.jsx. */
+.gacha__dial[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.gacha__status {
+  margin: 0.6rem 0 0;
+  min-height: 1.2em;
+  /* holds its line so the panel does not jump as the text arrives */
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* -------------------------------------------------------------- machine --- */
+
+.gacha__machine {
+  position: relative;
+  width: 100%;
+  max-width: 10rem;
+  /* margin: 0 auto; */
+}
+
+.gacha__panel {
+  padding-left: 30px;
+}
+
+/*
+ * The dome. A raked two-token gradient rather than a flat fill, so it reads as glass over the
+ * capsules — deliberately the surface pair rather than a white overlay, which would be the
+ * obvious way to fake a highlight and would vanish against the light theme's white surfaces.
+ * The pair happens to run light-to-dark in one theme and dark-to-light in the other; both are
+ * a legitimate sheen, and neither is a colour invented outside the system.
+ */
+.gacha__globe {
+  position: relative;
+  aspect-ratio: 1;
+  border: 2px solid var(--line-strong);
+  border-radius: 50% 50% 44% 44%;
+  background: linear-gradient(158deg, var(--surface), var(--surface-2));
+  overflow: hidden;
+}
+
+/*
+ * The capsules, scattered across the floor of the dome.
+ *
+ * The seam is the pen's trick, unchanged in structure: ::after is a circle twice the ball's
+ * size, `border: inherit` so it carries the same outline, pushed down so only its bordered top
+ * edge shows — and the parent's overflow clips the rest. That arc is the join between the two
+ * halves.
+ */
+.gacha__ball {
+  --size: 2.1rem;
+  --rot: 0deg;
+
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border: 2px solid var(--accent-dim);
+  border-radius: 50%;
+  background: var(--accent);
+  overflow: hidden;
+  transform: translateY(0) rotate(var(--rot));
+}
+
+/*
+ * Piled on the floor of the dome: four resting on the bottom, three in the gaps above them,
+ * one crowning the heap. Hand-placed and listed, because a pile is not something an index
+ * expression describes — an even scatter reads as a diagram rather than as loose capsules.
+ *
+ * NOT computed from --i. calc() has no modulo: `%` there is the percentage unit, so
+ * `calc(6% + (var(--i) % 3) * 15%)` is rejected by the parser and the whole declaration is
+ * dropped — which silently stacks every capsule at the same spot. `mod()` exists in newer CSS
+ * but buys nothing over eight explicit positions.
+ *
+ * The rotation is a variable rather than a transform so the jitter keyframes can carry it
+ * through; a keyframe setting `transform` would otherwise wipe it and snap every seam upright.
+ */
+.gacha__ball:nth-child(1) {
+  left: 6%;
+  bottom: 5%;
+  --rot: 18deg;
+}
+
+.gacha__ball:nth-child(2) {
+  left: 28%;
+  bottom: 3%;
+  --rot: -32deg;
+}
+
+.gacha__ball:nth-child(3) {
+  left: 50%;
+  bottom: 6%;
+  --rot: 74deg;
+}
+
+.gacha__ball:nth-child(4) {
+  left: 71%;
+  bottom: 4%;
+  --rot: -12deg;
+}
+
+.gacha__ball:nth-child(5) {
+  left: 16%;
+  bottom: 26%;
+  --rot: 47deg;
+}
+
+.gacha__ball:nth-child(6) {
+  left: 40%;
+  bottom: 29%;
+  --rot: -58deg;
+}
+
+.gacha__ball:nth-child(7) {
+  left: 62%;
+  bottom: 25%;
+  --rot: 8deg;
+}
+
+.gacha__ball:nth-child(8) {
+  left: 32%;
+  bottom: 50%;
+  --rot: -24deg;
+}
+
+.gacha__ball::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 200%;
+  height: 200%;
+  border: inherit;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translate(-25%, -5%);
+}
+
+/* The body below the dome: the plate the handle turns on, and the slot the capsule lands in. */
+.gacha__body-plate {
+  position: relative;
+  height: 3.4rem;
+  margin-top: -0.4rem;
+  border: 2px solid var(--line-strong);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--surface);
+}
+
+.gacha__handle {
+  position: absolute;
+  top: 0.7rem;
+  left: 1.1rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--on-accent);
+}
+
+/* The coin slot, purely to make the plate read as a machine front. */
+.gacha__slot {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.1rem;
+  width: 1.6rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.gacha__tray {
+  position: relative;
+  height: 2.6rem;
+  border: 2px solid var(--line-strong);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--field-bg);
+  overflow: hidden;
+}
+
+/*
+ * The capsule that actually drops.
+ *
+ * Halved with clip-path rather than the dome's inherited-border trick: this one has to carry
+ * the confetti spans as children, and the ::after there is doing the seam. Same read, and it
+ * leaves the element free.
+ *
+ * On the .lantern motif — --text against --accent — so it inverts between themes for free: a
+ * lit paper capsule in the alley, a painted signboard capsule in the cat cafe. Same object in
+ * both photographs, no second rule.
+ */
+.gacha__prize-ball {
+  position: absolute;
+  left: 50%;
+  bottom: 0.5rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-left: -1.2rem;
+  border: 2px solid var(--accent-dim);
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: var(--lantern-lift);
+  opacity: 0;
+}
+
+.gacha__prize-ball::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* The lower hemisphere, clipped to half the disc — the seam without a second element. */
+  background: var(--accent);
+  clip-path: inset(50% 0 0 0);
+}
+
+/* Only ever visible mid-drop; the tray is empty before and after. */
+.gacha--revealed .gacha__prize-ball {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------- prize --- */
+
+/*
+ * What came out of the capsule, over the page. Sized and shadowed like the shift editor's
+ * .event dialog, because the app should have one idea of what a dialog is — narrower, because
+ * this one holds a single dish rather than a form.
+ */
+.gacha__result {
+  width: min(23rem, calc(100vw - 2rem));
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-modal);
+  text-align: center;
+}
+
+/* Literal rgb rather than a token, matching .event::backdrop in schedule.css: a backdrop is a
+   dimming of whatever is behind it, and the system has no token for that. Both themes listed. */
+.gacha__result::backdrop {
+  background: rgb(6 5 4 / 62%);
+}
+
+:root[data-theme='light'] .gacha__result::backdrop {
+  background: rgb(20 19 15 / 34%);
+}
+
+.gacha__result-kicker {
+  margin: 0 0 0.6rem;
+  color: var(--accent-text);
+  font-family: var(--jp);
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+}
+
+.gacha__result-image {
+  width: 100%;
+  height: 10rem;
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.gacha__result-name {
+  margin: 0.8rem 0 0;
+  font-size: 1.35rem;
+}
+
+/* Centred inside the dialog, where MenuCard sets them running along the card. */
+.gacha__result .menu-card__price {
+  justify-content: center;
+}
+
+.gacha__result .gacha__actions {
+  justify-content: center;
+}
+
+.gacha__caption {
+  margin: 0.5rem 0 0;
+  color: var(--faint);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.gacha__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+/* The confetti spans live inside the capsule and only exist once it bursts. */
+.gacha__confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: -0.15rem 0 0 -0.15rem;
+  border-radius: 1px;
+  opacity: 0;
+}
+
+/* The four status hues in rotation, rather than the pen's random HSL — the page already has
+   a palette, and confetti is not a reason to invent a fifth colour. */
+.gacha__confetti:nth-child(4n + 1) {
+  background: var(--accent);
+}
+
+.gacha__confetti:nth-child(4n + 2) {
+  background: var(--lamp);
+}
+
+.gacha__confetti:nth-child(4n + 3) {
+  background: var(--leaf);
+}
+
+.gacha__confetti:nth-child(4n) {
+  background: var(--sign);
+}
+
+/* ---------------------------------------------------------------- motion --- */
+
+/*
+ * All motion is opt-IN, wrapped in no-preference rather than switched off in a reduce block.
+ *
+ * The global reset at the end of index.css is `* { transition: none !important }` — it clears
+ * transitions and does NOTHING to an @keyframes animation. The machine shake below is
+ * `infinite`, so under that reset alone a reader who asked for stillness would be left with a
+ * permanently vibrating machine on the page. Wrapping the rules here means they never attach
+ * at all: nothing has to win a specificity fight and the shake can never start.
+ *
+ * Same pattern as the .event[open] block in schedule.css. Keep the two in step — anything
+ * added below this line must stay inside this block.
+ *
+ * Corollary, and the easy thing to get wrong: Gacha.jsx moves focus on `animationend`. No
+ * animation means no event, so it carries a reduced-motion path that focuses immediately.
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  /* Beat 1 — the handle snaps round. Accelerating, the way a sprung dial gives way. */
+  .gacha--turning .gacha__handle {
+    animation: gacha-turn 220ms cubic-bezier(0.55, 0, 1, 0.45) both;
+  }
+
+  /*
+   * Beat 2 — the whole machine shakes and the capsules jitter inside it.
+   *
+   * `infinite` is what makes this the loading state: it keeps going for exactly as long as the
+   * request takes, with no timer to keep in step. SHAKE_MIN in Gacha.jsx is its floor.
+   */
+  .gacha--turning .gacha__machine {
+    animation: gacha-shake 110ms linear 180ms infinite;
+  }
+
+  .gacha--turning .gacha__ball {
+    animation: gacha-jitter 190ms ease-in-out 180ms infinite alternate;
+    /* Staggered off the index so the capsules do not move as one block. */
+    animation-delay: calc(180ms - (var(--i) * 23ms));
+  }
+
+  /* Beat 3 — the drop, damped: each bounce is shorter and lower than the one before it. */
+  .gacha--revealed .gacha__prize-ball {
+    animation:
+      gacha-drop 490ms cubic-bezier(0.5, 0, 1, 1) both,
+      gacha-burst 350ms ease-out 700ms both;
+  }
+
+  /* Beat 4 — the burst throws the confetti out. */
+  /*
+   * Fourteen spans thrown evenly around the circle. The angle is index-driven; the distance
+   * cycles through four values in nth-child rules rather than calc, because calc has no
+   * modulo — see the note on .gacha__ball.
+   */
+  .gacha--revealed .gacha__confetti {
+    --angle: calc(var(--i) * 25.7deg);
+    --distance: 2rem;
+
+    animation: gacha-confetti 620ms ease-out 780ms both;
+  }
+
+  .gacha--revealed .gacha__confetti:nth-child(4n + 2) {
+    --distance: 2.55rem;
+  }
+
+  .gacha--revealed .gacha__confetti:nth-child(4n + 3) {
+    --distance: 3.1rem;
+  }
+
+  .gacha--revealed .gacha__confetti:nth-child(4n) {
+    --distance: 3.65rem;
+  }
+
+  /*
+   * Beat 5 — the dialog arrives on an overshoot, the pen's back.out.
+   *
+   * No delay: it is mounted by the burst finishing (see openResult in Gacha.jsx), so it is
+   * already arriving at the right moment and a delay here would leave a gap where the capsule
+   * has gone and the dish has not come.
+   */
+  .gacha__result[open] {
+    animation: gacha-reveal 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes gacha-turn {
+    to {
+      transform: rotate(90deg);
+    }
+  }
+
+  @keyframes gacha-shake {
+
+    0%,
+    100% {
+      transform: translateX(-2px);
+    }
+
+    50% {
+      transform: translateX(2px);
+    }
+  }
+
+  /* Carries --rot through, so a jittering capsule keeps the seam angle it was placed at. */
+  @keyframes gacha-jitter {
+    from {
+      transform: translateY(0) rotate(var(--rot));
+    }
+
+    to {
+      transform: translateY(-4px) rotate(calc(var(--rot) + 8deg));
+    }
+  }
+
+  /* Amplitude and duration both decay — 0 to floor, up 40%, down, up 15%, down, settle. */
+  @keyframes gacha-drop {
+    0% {
+      transform: translateY(-3.4rem);
+      opacity: 1;
+    }
+
+    46% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.4, 1);
+    }
+
+    66% {
+      transform: translateY(-0.85rem);
+      animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+    }
+
+    82% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.4, 1);
+    }
+
+    92% {
+      transform: translateY(-0.3rem);
+      animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+    }
+
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  /* The rubber band: squash and stretch alternating, amplitude rising, then it is gone. */
+  @keyframes gacha-burst {
+    0% {
+      transform: scale(1);
+    }
+
+    20% {
+      transform: scale(1.08, 0.92);
+    }
+
+    40% {
+      transform: scale(0.92, 1.1);
+    }
+
+    60% {
+      transform: scale(1.2, 0.82);
+    }
+
+    78% {
+      transform: scale(0.8, 1.28);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes gacha-confetti {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform:
+        rotate(var(--angle)) translateY(calc(var(--distance) * -1)) rotate(220deg) scale(0.4);
+    }
+  }
+
+  @keyframes gacha-reveal {
+    from {
+      opacity: 0;
+      transform: scale(0.86);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ------------------------------------------------------------ responsive --- */
+
+/* Matches .course's own collapse: machine over the words rather than beside them. */
+@media (max-width: 900px) {
+  .gacha {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    justify-items: start;
+  }
+
+  .gacha__machine {
+    max-width: 7.5rem;
+    margin: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .gacha__result {
+    padding: 1.1rem;
+  }
+
+  .gacha__result-image {
+    height: 8rem;
+  }
+
+  .gacha__actions button {
+    flex: 1;
+  }
+}

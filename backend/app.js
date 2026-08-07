@@ -17,6 +17,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/menu-items', require('./routes/menuItems'));
+app.use('/api/gacha', require('./routes/gacha'));
 app.use('/api/shift-templates', require('./routes/shiftTemplates'));
 app.use('/api/shifts', require('./routes/shifts'));
 app.use('/api/schedule', require('./routes/schedule'));

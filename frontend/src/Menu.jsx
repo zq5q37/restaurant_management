@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, formatPrice } from './api';
+import Gacha from './Gacha';
 import ItemEditor from './ItemEditor';
 import PageHead from './PageHead';
 import { CATEGORY_JP, DISH_JP, PAGE_JP } from './labels';
+import { prefersReducedMotion } from './theme';
 import './menu.css';
 
 const SORTS = [
@@ -130,15 +132,50 @@ function Menu({ token, user, onUnauthorized }) {
   }
 
   /**
-   * Opening a dish fetches it by id. That request is what records the view behind the
-   * "popular items" report — the list endpoint deliberately does not count, because
-   * appearing in a grid of everything is not the same as someone looking at you.
+   * Fetching a dish by id is what records the view behind the "popular items" report — the
+   * list endpoint deliberately does not count, because appearing in a grid of everything is
+   * not the same as someone looking at you.
+   *
+   * This is also the ONLY place a view is written on this page. The gacha draw deliberately
+   * writes nothing (see backend/routes/gacha.js): a draw is an impression, and letting the
+   * machine count its own promotion as interest would corrupt the signal it reads from.
    */
-  function openItem(item) {
-    setOpenId((current) => (current === item.id ? null : item.id));
+  const recordView = (item) =>
     apiFetch(`/api/menu-items/${item.id}`, { token }).catch(() => {
       /* The card already has everything it displays; a failed ping is not worth an alert. */
     });
+
+  /** Clicking a title toggles its details open and shut. */
+  function openItem(item) {
+    setOpenId((current) => (current === item.id ? null : item.id));
+    recordView(item);
+  }
+
+  /**
+   * "See dish" from the gacha: open it, never toggle. The caller asked to see this dish, so
+   * drawing the same one twice must not close the card the second time.
+   *
+   * Filters are cleared first when the dish is not among the rendered items — the machine
+   * draws from the whole course, so it can hand back something a search box is hiding, and
+   * scrolling to a card that is not on the page does nothing at all.
+   */
+  function revealItem(item) {
+    if (!items.some((i) => i.id === item.id)) {
+      setQuery('');
+      setDebouncedQuery('');
+      setSort('');
+      setAvailability('');
+    }
+
+    setOpenId(item.id);
+    recordView(item);
+
+    requestAnimationFrame(() =>
+      document.getElementById(`dish-${item.id}`)?.scrollIntoView({
+        block: 'center',
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      })
+    );
   }
 
   const gridProps = {
@@ -226,6 +263,19 @@ function Menu({ token, user, onUnauthorized }) {
         </div>
       )}
 
+      {/*
+        Under the controls, above the courses: "can't decide?" is the question you have before
+        you start scrolling, not after. Shown to every role — a manager wants to see what the
+        machine is pushing. It takes the course filter but not the search box, because if you
+        have typed a dish name you already know what you want.
+      */}
+      <Gacha
+        token={token}
+        categoryId={categoryId}
+        onSeeDish={revealItem}
+        onUnauthorized={onUnauthorized}
+      />
+
       {error && (
         <p role="alert" className="form-error page--padded">
           {error}
@@ -310,7 +360,11 @@ function MenuCard({ item, canManage, onEdit, onToggle, onDelete, onOpen, isOpen 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
-    <li className={`menu-card${item.is_available ? '' : ' menu-card--unavailable'}`}>
+    // The id is the gacha's scroll target — see revealItem().
+    <li
+      id={`dish-${item.id}`}
+      className={`menu-card${item.is_available ? '' : ' menu-card--unavailable'}`}
+    >
       {item.image_path ? (
         <img
           className="menu-card__image"

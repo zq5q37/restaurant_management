@@ -32,6 +32,18 @@ export function currentTheme() {
   return THEMES.includes(attr) ? attr : 'dark';
 }
 
+/**
+ * Whether the reader has asked for less motion.
+ *
+ * Read at the moment it is needed rather than held in state: this decides whether an animation
+ * runs at all, and a stale answer would either play motion someone opted out of or strand a
+ * sequence waiting on an animationend that will never fire.
+ */
+export function prefersReducedMotion() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 export function storedChoice() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

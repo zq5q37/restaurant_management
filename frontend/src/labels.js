@@ -33,6 +33,12 @@ export const DISH_JP = {
   'Air-fried Potato Wedges': 'ポテトウェッジ',
 };
 
+/**
+ * The capsule machine on the menu page. 一品 is "one dish"; ガチャ is the machine itself, from
+ * the sound the crank makes — the Japanese name for the thing, not a translation of ours.
+ */
+export const GACHA_JP = { title: '一品ガチャ' };
+
 /** Per-screen kickers for the page header band. */
 export const PAGE_JP = {
   menu: 'お品書き',

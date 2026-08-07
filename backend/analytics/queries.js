@@ -433,10 +433,59 @@ function userActivity({ from, to }) {
     .map((r) => ({ ...r, is_active: Boolean(r.is_active) }));
 }
 
+/* ------------------------------------------------------------- menu gacha ---- */
+
+/**
+ * The pool the dish gacha draws from, with each dish's view count over the window.
+ *
+ * Lives here rather than in routes/gacha.js because it is the same LEFT-JOIN-over-
+ * menu_item_views shape as popularItems() above, and a second copy would be a second
+ * definition of "views in a window" that could drift from the one the manager's report uses.
+ *
+ * LEFT JOIN, not INNER, for the reason popularItems() gives: a dish nobody has looked at all
+ * month must still appear. Under an INNER JOIN the most overlooked dishes on the menu — which
+ * are exactly the ones the gacha exists to promote — silently vanish from the pool. The date
+ * bound rides in the join predicate rather than a WHERE clause for the same reason: in a WHERE
+ * it would filter those rows back out after the join had kept them.
+ *
+ * Availability is filtered UNCONDITIONALLY here, deliberately ignoring canSeeUnavailable() in
+ * routes/menuItems.js. That is a *browsing* permission — staff need to see what is off the
+ * board. This is a *recommendation*, and recommending a dish the kitchen is not cooking is
+ * wrong no matter who asks. Every role draws from the dishes a customer could actually order.
+ *
+ * ORDER BY m.id is load-bearing, not cosmetic. drawFrom() walks the array in order, so a stable
+ * order is what lets db/gacha-weights.js reproduce a draw under a seeded RNG. Removing it
+ * because "order does not matter for a random draw" would make the verification unrepeatable.
+ *
+ * Returns raw rows, cost_cents included: cost is an input to the weighting and must not leave
+ * the process. routes/gacha.js picks the public fields off the winner.
+ */
+function gachaCandidates({ category_id = null, window_days = 30 } = {}) {
+  const cutoff = new Date(Date.now() - window_days * 86400000)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' '); // same shape as nowStamp() in menu/pricing.js, so string compare orders
+
+  return db
+    .prepare(`
+      SELECT m.*, c.name AS category_name, COUNT(v.id) AS views
+      FROM menu_items m
+      JOIN categories c ON c.id = m.category_id
+      LEFT JOIN menu_item_views v
+        ON v.menu_item_id = m.id AND v.viewed_at >= @cutoff
+      WHERE m.is_available = 1
+        AND (@category_id IS NULL OR m.category_id = @category_id)
+      GROUP BY m.id
+      ORDER BY m.id
+    `)
+    .all({ cutoff, category_id });
+}
+
 module.exports = {
   rangeBounds,
   eachDate,
   popularItems,
+  gachaCandidates,
   viewsByDay,
   viewsByCategory,
   scheduleCoverage,

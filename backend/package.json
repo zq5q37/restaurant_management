@@ -7,6 +7,7 @@
     "seed": "node db/seed.js",
     "attach-photos": "node db/attach-photos.js",
     "inspect-db": "node db/inspect.js",
+    "gacha-weights": "node db/gacha-weights.js",
     "retire-starter-menu": "node db/retire-starter-menu.js"
   },
   "dependencies": {

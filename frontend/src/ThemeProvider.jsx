@@ -4,6 +4,7 @@ import {
   STORAGE_KEY,
   ThemeContext,
   currentTheme,
+  prefersReducedMotion,
   storedChoice,
 } from './theme';
 
@@ -55,7 +56,7 @@ export function ThemeProvider({ children }) {
    */
   const chooseFrom = useCallback(
     (next, origin) => {
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reduced = prefersReducedMotion();
 
       /*
        * The visibility check is not defensive padding — a view transition on a hidden
