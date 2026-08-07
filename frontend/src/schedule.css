@@ -59,8 +59,351 @@
   box-shadow: inset 4px 0 0 var(--sign);
 }
 
-.schedule-panel {
-  padding: 1.25rem var(--gutter) 0;
+/* ------------------------------------------------- shift editor · dialog --- */
+
+/*
+ * The event dialog, laid out the way a calendar app lays out an event: a quiet action bar,
+ * the title first and largest, then rows hanging off an icon gutter. Fields carry no chrome
+ * until they are hovered or focused, so the dialog reads as a description of the shift
+ * rather than as a form to be filled in.
+ */
+.event {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: min(44rem, calc(100vh - 3rem));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.event::backdrop {
+  background: rgb(6 5 4 / 62%);
+}
+
+:root[data-theme='light'] .event::backdrop {
+  background: rgb(20 19 15 / 34%);
+}
+
+.event__form {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  overflow-y: auto;
+  padding: 0 1.25rem 1.5rem;
+}
+
+/* Sticky so Save stays reachable while the guest list grows past the fold. */
+.event__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 -1.25rem 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.event__bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.event__icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.event__icon-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+  filter: none;
+}
+
+.event__icon-button--danger:hover:not(:disabled) {
+  background: var(--sign-soft);
+  color: var(--sign-text);
+}
+
+.event__glyph {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.event__glyph--small {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.event__save {
+  padding: 0.4rem 1.1rem;
+  border-radius: 999px;
+}
+
+.event__error {
+  margin: 0.5rem 0 0;
+}
+
+.event__confirm {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--sign-border);
+  border-left: 4px solid var(--sign);
+  border-radius: var(--radius);
+  background: var(--sign-soft);
+  color: var(--sign-text);
+  font-size: 0.88rem;
+}
+
+.event__confirm p {
+  margin: 0 0 0.6rem;
+}
+
+.event__confirm-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ------------------------------------------------------- editor · title --- */
+
+.event__title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.9rem 0 1.1rem;
+}
+
+/*
+ * The role is the event's title, so it is set at title size and stripped of its select
+ * chrome — the arrow is the only thing saying it can be changed, which is how a calendar
+ * title behaves too.
+ */
+.event__title-select {
+  padding: 0.1rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: capitalize;
+}
+
+.event__title-select:hover {
+  border-color: var(--field-border);
+}
+
+.event__title-caption {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* Sits directly under the title it explains, and carries the sign colour so it reads as
+   something needing a decision rather than as another hint. */
+.event__retired {
+  margin: -0.6rem 0 0.9rem;
+  color: var(--sign-text);
+}
+
+/* --------------------------------------------------------- editor · rows --- */
+
+/* Icon gutter: every row starts at the same x, so the eye finds when/who/what by shape. */
+.event__row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  gap: 0.9rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line-2);
+}
+
+.event__row-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.event__row-body {
+  min-width: 0;
+}
+
+.event__row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.event__muted {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* Fields go quiet until touched: chrome on eleven inputs at rest is what makes a dialog
+   look like paperwork. */
+.event__row-body input,
+.event__row-body select,
+.event__row-body textarea {
+  border-color: transparent;
+  background: none;
+}
+
+.event__row-body input:hover,
+.event__row-body select:hover,
+.event__row-body textarea:hover {
+  border-color: var(--field-border);
+}
+
+.event__row-body input:focus-visible,
+.event__row-body select:focus-visible,
+.event__row-body textarea:focus-visible {
+  border-color: var(--field-border);
+  background: var(--field-bg);
+}
+
+.event__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.event__when input {
+  padding: 0.3rem 0.4rem;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.event__dash {
+  color: var(--muted);
+}
+
+.event__when-note {
+  margin: 0.3rem 0 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------- editor · guests --- */
+
+.event__guests {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.event__guests li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+}
+
+/* The disc is the calendar's avatar slot. Initials rather than a generated face: there are
+   no photographs of staff, and a drawn one would be an invention. */
+.event__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.event__guest-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Kept out of the tab order's way visually until the row is hovered or focused, but never
+   hidden from it — a keyboard user has no hover to reveal it with. */
+.event__guest-remove {
+  width: 1.6rem;
+  height: 1.6rem;
+  opacity: 0;
+}
+
+.event__guests li:hover .event__guest-remove,
+.event__guest-remove:focus-visible {
+  opacity: 1;
+}
+
+.event__add-guest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.event__add-guest select {
+  flex: 1;
+  min-width: 10rem;
+  padding: 0.4rem 0.5rem;
+}
+
+/* --------------------------------------------------- editor · misc fields --- */
+
+.event__inline-label {
+  display: inline;
+  margin: 0 0.5rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 400;
+}
+
+.event__number {
+  width: 4.5rem;
+  padding: 0.3rem 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.event__notes {
+  display: block;
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  resize: vertical;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .event[open] {
+    animation: event-in 140ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  @keyframes event-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.99);
+    }
+  }
 }
 
 /* -------------------------------------------------------------- day bar ---- */

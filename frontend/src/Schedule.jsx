@@ -244,22 +244,22 @@ function Schedule({ token, user, onUnauthorized }) {
       {/* Nothing to say about coverage in a week with no shifts in it yet. */}
       {canManage && coverage?.total_shifts > 0 && <CoverageSummary coverage={coverage} />}
 
+      {/* No wrapper: a modal <dialog> lives in the browser's top layer, so a container here
+          would only reserve empty space in the page behind it. */}
       {canManage && editing && (
-        <div className="schedule-panel">
-          <ShiftEditor
-            // Keyed by shift so switching which one is open resets the form, while a refresh of
-            // the same shift keeps what has been typed.
-            key={editing === 'new' ? 'new' : editing.id}
-            token={token}
-            shift={editing === 'new' ? null : editing}
-            staff={staff}
-            defaultDate={selectedDate}
-            onClose={() => setEditing(null)}
-            onSaved={handleSaved}
-            onDeleted={handleDeleted}
-            onUnauthorized={onUnauthorized}
-          />
-        </div>
+        <ShiftEditor
+          // Keyed by shift so switching which one is open resets the form, while a refresh of
+          // the same shift keeps what has been typed.
+          key={editing === 'new' ? 'new' : editing.id}
+          token={token}
+          shift={editing === 'new' ? null : editing}
+          staff={staff}
+          defaultDate={selectedDate}
+          onClose={() => setEditing(null)}
+          onSaved={handleSaved}
+          onDeleted={handleDeleted}
+          onUnauthorized={onUnauthorized}
+        />
       )}
 
       {!error && week && (
